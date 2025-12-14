@@ -1,0 +1,131 @@
+/* ===========================
+    ROOT
+=========================== */
+.root {
+    -fx-font-family: "Inter", "Segoe UI", Roboto;
+    -fx-background-color: #f4f5f7;
+}
+
+/* ===========================
+    HEADER
+=========================== */
+.header {
+    -fx-background-color: #1f1f1f;
+    -fx-padding: 15 20;
+    -fx-alignment: center-left;
+    -fx-spacing: 20;
+}
+
+.header-title {
+    -fx-text-fill: white;
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+}
+
+/* ===========================
+    CONTENT AREA
+=========================== */
+.content {
+    -fx-padding: 20;
+}
+
+.section-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d2f33;
+}
+
+/* ===========================
+    TABLE
+=========================== */
+.modern-table {
+    -fx-background-color: white;
+    -fx-border-color: #d2d5da;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-padding: 5;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #eef0f3;
+    -fx-padding: 10 0;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #3f74ff;
+    -fx-text-fill: white;
+}
+
+/* ===========================
+    ACTION PANEL
+=========================== */
+.action-panel {
+    -fx-padding: 20;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #dcdcdc;
+    -fx-border-width: 1 0 0 0;
+}
+
+/* Status */
+.status-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #dbbf00;
+    -fx-font-weight: bold;
+}
+
+/* Cards */
+.action-card {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #dcdcdc;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 15;
+}
+
+.card-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d2f33;
+}
+
+/* Inputs */
+.text-field {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cdd1d6;
+    -fx-border-radius: 6;
+    -fx-padding: 6;
+}
+
+.text-field:focused {
+    -fx-border-color: #dbbf00;
+}
+
+/* Buttons */
+.button {
+    -fx-background-color: #dbbf00;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+    -fx-padding: 6 14;
+}
+
+.button:hover {
+    -fx-background-color: #9e8a00;
+}
+
+.header-btn-danger {
+    -fx-background-color: #ff5757;
+    -fx-text-fill: white;
+    -fx-padding: 6 15;
+    -fx-background-radius: 6;
+}
+
+.header-btn-danger:hover {
+    -fx-background-color: #d64545;
+}
+
+
+.header-btn {
+    -fx-background-color: #dbbf00;
+    -fx-text-fill: white;
+    -fx-padding: 6 15;
+    -fx-background-radius: 6;
+}

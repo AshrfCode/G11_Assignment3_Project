@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="clientgui.ClientGUIController"
+            stylesheets="@ClientGUI.css">
+
+    <!-- ===================== HEADER ===================== -->
+    <top>
+        <HBox styleClass="header">
+            <Label text="Bistro Client – Order Management" styleClass="header-title"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Button text="Refresh" onAction="#handleRefreshOrders" styleClass="header-btn"/>
+            <Button text="Exit" onAction="#handleExit" styleClass="header-btn-danger"/>
+        </HBox>
+    </top>
+
+    <!-- ===================== MAIN CONTENT ===================== -->
+    <center>
+        <VBox spacing="15" styleClass="content">
+            <Label text="Orders List" styleClass="section-title"/>
+
+            <TableView fx:id="orderTable" styleClass="modern-table">
+                <columns>
+                    <TableColumn fx:id="idCol" text="Order ID"/>
+                    <TableColumn fx:id="guestsCol" text="Guests"/>
+                    <TableColumn fx:id="dateCol" text="Order Date"/>
+                    <TableColumn fx:id="confirmationCodeCol" text="Confirmation Code"/>
+                    <TableColumn fx:id="subscriberIdCol" text="Subscriber ID"/>
+                    <TableColumn fx:id="datePlacedCol" text="Placed"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+    <!-- ===================== ACTION PANEL ===================== -->
+    <bottom>
+        <VBox spacing="20" styleClass="action-panel">
+
+            <Label fx:id="statusLabel" text="Ready" styleClass="status-label"/>
+
+            <!-- Update Guests Card -->
+            <VBox spacing="10" styleClass="action-card">
+                <Label text="Update Number of Guests" styleClass="card-title"/>
+
+                <HBox spacing="10">
+                    <TextField fx:id="orderIdField" promptText="Order ID"/>
+                    <TextField fx:id="newGuestsField" promptText="New Guests"/>
+                    <Button text="Update" onAction="#handleUpdateGuests"/>
+                </HBox>
+            </VBox>
+
+            <!-- Update Date Card -->
+            <VBox spacing="10" styleClass="action-card">
+                <Label text="Update Order Date" styleClass="card-title"/>
+
+                <HBox spacing="10">
+                    <TextField fx:id="orderIdDateField" promptText="Order ID"/>
+                    <TextField fx:id="newDateField" promptText="yyyy-mm-dd"/>
+                    <Button text="Update" onAction="#handleUpdateDate"/>
+                </HBox>
+            </VBox>
+
+        </VBox>
+    </bottom>
+
+</BorderPane>

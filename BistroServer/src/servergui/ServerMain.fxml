@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="servergui.ServerMainController"
+           styleClass="background">
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <VBox spacing="30" alignment="TOP_CENTER">
+        <padding>
+            <Insets top="40" right="40" bottom="40" left="40"/>
+        </padding>
+
+        <!-- HEADER TITLE -->
+        <Label text="Bistro Server Control Panel" styleClass="main-title"/>
+
+        <!-- GRID OF TWO FLOATING CARDS -->
+        <GridPane hgap="30" vgap="30" alignment="CENTER" styleClass="form-grid">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="50"/>
+                <ColumnConstraints percentWidth="50"/>
+            </columnConstraints>
+
+            <!-- CARD 1: SERVER SETTINGS -->
+            <VBox spacing="20" styleClass="glass-card" GridPane.rowIndex="0" GridPane.columnIndex="0">
+                <Label text="Server Settings" styleClass="card-title"/>
+
+                <GridPane hgap="15" vgap="12">
+                    <columnConstraints>
+                        <ColumnConstraints halignment="RIGHT"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+
+                    <Label text="IP:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="serverIpField" editable="false"
+                               GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                    <Label text="Port:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <TextField fx:id="serverPortField" text="5555"
+                               GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                    <Label text="DB Host:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                    <TextField fx:id="dbIpField" text="localhost"
+                               GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                    <Label text="DB Port:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                    <TextField fx:id="dbPortField" text="3306"
+                               GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                    <Label text="DB User:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                    <TextField fx:id="dbUserField"
+                               GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                    <Label text="Password:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="dbPassField"
+                                   GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                </GridPane>
+
+                <HBox spacing="15" alignment="CENTER">
+                    <Button text="Connect" fx:id="connectButton"
+                            onAction="#handleConnect" styleClass="primary-btn"/>
+                    <Button text="Disconnect" fx:id="disconnectButton"
+                            onAction="#handleDisconnect" styleClass="danger-btn"/>
+                </HBox>
+
+            </VBox>
+
+            <!-- CARD 2: CLIENT LIST -->
+            <VBox spacing="20" styleClass="glass-card" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                <Label text="Connected Clients" styleClass="card-title"/>
+
+                <TableView fx:id="clientTable" prefHeight="300" styleClass="client-table">
+                    <columns>
+                        <TableColumn text="IP" fx:id="ipColumn"/>
+                        <TableColumn text="Host" fx:id="hostColumn"/>
+                        <TableColumn text="Status" fx:id="statusColumn"/>
+                    </columns>
+
+                    <placeholder>
+                        <Label text="No connected clients" styleClass="table-placeholder"/>
+                    </placeholder>
+
+                </TableView>
+
+                <HBox alignment="CENTER">
+                    <Button text="Refresh" styleClass="icon-btn"/>
+                </HBox>
+            </VBox>
+
+        </GridPane>
+
+        <!-- FOOTER BAR: status centered, exit on the right -->
+        <BorderPane>
+            <center>
+                <Label fx:id="statusLabel"
+                       text="Status: Idle"
+                       styleClass="status-label"/>
+            </center>
+
+            <right>
+                <Button text="Exit"
+                        onAction="#handleExit"
+                        styleClass="danger-btn"
+                        style="-fx-padding: 8 18; -fx-font-size: 14px;"/>
+            </right>
+
+            <padding>
+                <Insets top="10" bottom="10" left="20" right="20"/>
+            </padding>
+        </BorderPane>
+
+    </VBox>
+
+</StackPane>
