@@ -11,6 +11,12 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/Users/ashrf/Desktop/Software Engineering/Semster 6/שיטות/Ex-03-WorkbenchJDBC-1/mysql-connector-j-9.5.0.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/OCSF"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/SharedFiles"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
