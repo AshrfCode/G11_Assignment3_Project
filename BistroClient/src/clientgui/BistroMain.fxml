@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="clientgui.BistroMainController"
+      stylesheets="@BistroMain.css">
+
+    <!-- ToggleGroup -->
+    <fx:define>
+        <ToggleGroup fx:id="locationGroup"/>
+    </fx:define>
+
+    <!-- LEFT SIDE (Brand / Welcome) -->
+    <VBox spacing="20"
+          alignment="CENTER_LEFT"
+          HBox.hgrow="ALWAYS"
+          maxWidth="550"
+          styleClass="left-pane">
+
+        <Label text="BISTRO"
+               styleClass="brand-title"/>
+
+        <Label text="Welcome to the Bistro system"
+               styleClass="brand-subtitle"/>
+
+        <Label text="Manage reservations, staff, and orders&#10;from one modern platform."
+               styleClass="brand-text"/>
+
+    </VBox>
+
+    <!-- RIGHT SIDE (Login Form) -->
+    <VBox spacing="16"
+          alignment="CENTER"
+          HBox.hgrow="ALWAYS"
+           maxWidth="450"
+          styleClass="right-pane">
+
+        <Label text="Sign In"
+               styleClass="form-title"/>
+
+        <TextField fx:id="txtUsername"
+                   promptText="Username"
+                   styleClass="input"/>
+
+        <PasswordField fx:id="txtPassword"
+                       promptText="Password"
+                       styleClass="input"/>
+
+        <!-- Home / Restaurant selection -->
+        <HBox spacing="12" alignment="CENTER">
+            <ToggleButton text="🏠 Home"
+                          fx:id="toggleHome"
+                          toggleGroup="$locationGroup"
+                          styleClass="toggle"/>
+
+            <ToggleButton text="🍽 Restaurant"
+                          fx:id="toggleRestaurant"
+                          toggleGroup="$locationGroup"
+                          styleClass="toggle"/>
+        </HBox>
+
+        <Button text="Login"
+                onAction="#handleLogin"
+                styleClass="primary-btn"/>
+
+        <Label text="No account? Call 5555 to create one."
+               styleClass="info-text"/>
+
+        <Separator prefWidth="260"/>
+
+        <!-- Quick access -->
+        <TextField fx:id="txtMemberCode"
+                   promptText="Member code / Reservation number"
+                   styleClass="input-small"/>
+
+        <Button text="Quick Access"
+                onAction="#handleQuickAccess"
+                styleClass="secondary-btn"/>
+
+        <!-- Guest access -->
+        <VBox spacing="6"
+              alignment="CENTER"
+              maxWidth="280">
+
+            <Label text="Just visiting?"
+                   styleClass="guest-text"/>
+
+            <Button text="Continue as Guest"
+                    onAction="#handleGuestAccess"
+                    styleClass="guest-btn"/>
+        </VBox>
+
+        <Label fx:id="statusLabel"
+               styleClass="status-text"/>
+
+    </VBox>
+
+</HBox>

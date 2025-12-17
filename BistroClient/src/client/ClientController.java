@@ -1,6 +1,5 @@
 package client;
 
-import clientgui.ClientGUIController;
 import common.ChatIF;
 import common.ClientRequest;
 import common.Order;
@@ -9,10 +8,9 @@ import java.io.IOException;
 import java.util.List;
 
 import ocsf.client.AbstractClient;
-import ocsf.client.AbstractClient;
-import ocsf.client.AbstractClient;
 
 public class ClientController extends AbstractClient {
+
     private ChatIF ui;
 
     public ClientController(String host, int port, ChatIF ui) throws IOException {
@@ -23,37 +21,37 @@ public class ClientController extends AbstractClient {
 
     @Override
     protected void handleMessageFromServer(Object msg) {
+
+        // Simple string messages (status, errors, confirmations)
         if (msg instanceof String) {
-            // Server returns strings for updates and error messages
-            String response = (String) msg;
-            this.ui.display(response);
+            ui.display((String) msg);
             return;
-        } else if (msg instanceof List<?>) {
+        }
+
+        // Lists from server (e.g., orders, reservations, reports)
+        if (msg instanceof List<?>) {
             List<?> list = (List<?>) msg;
+
             if (!list.isEmpty() && list.get(0) instanceof Order) {
                 @SuppressWarnings("unchecked")
                 List<Order> orders = (List<Order>) list;
 
-                if (this.ui instanceof ClientGUIController) {
-                    ClientGUIController gui = (ClientGUIController) this.ui;
-                    gui.displayOrders(orders);
-                } else {
-                    this.ui.display("📦 Received " + orders.size() + " orders.");
-                }
+                // For now: generic display
+                ui.display("📦 Received " + orders.size() + " orders.");
                 return;
             }
         }
 
-        // Debug: see what was received if unrecognized
-        System.err.println("⚠️ Unrecognized response from server: " + msg.getClass().getName());
-        this.ui.display("⚠️ Unrecognized response from server.");
+        // Fallback (debug-safe)
+        System.err.println("⚠️ Unrecognized message from server: " + msg);
+        ui.display("⚠️ Unrecognized message from server.");
     }
 
     public void sendRequest(ClientRequest request) {
         try {
             sendToServer(request);
         } catch (IOException e) {
-            this.ui.display("❌ Failed to send request to server: " + e.getMessage());
+            ui.display("❌ Failed to send request: " + e.getMessage());
         }
     }
 
@@ -61,12 +59,12 @@ public class ClientController extends AbstractClient {
         try {
             closeConnection();
         } catch (IOException e) {
-            this.ui.display("❌ Failed to close connection: " + e.getMessage());
+            ui.display("❌ Failed to close connection: " + e.getMessage());
         }
     }
 
     @Override
     protected void connectionClosed() {
-        this.ui.display("🔌 Client disconnected from server.");
+        ui.display("🔌 Client disconnected from server.");
     }
 }

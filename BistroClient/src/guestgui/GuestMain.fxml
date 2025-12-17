@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<HBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="guestgui.GuestMainController"
+      stylesheets="@GuestMain.css">
+
+    <!-- ================= SIDEBAR (FULL HEIGHT) ================= -->
+    <VBox prefWidth="240"
+          styleClass="sidebar"
+          spacing="20">
+
+        <Label text="BISTRO" styleClass="logo"/>
+
+        <VBox spacing="10">
+            <Button text="Make Reservation"
+                    onAction="#showReservation"
+                    styleClass="nav-btn"/>
+
+            <Button text="Waiting List"
+                    fx:id="waitingListBtn"
+                    onAction="#showWaitingList"
+                    styleClass="nav-btn"/>
+
+            <Button text="Pay"
+                    onAction="#showPayment"
+                    styleClass="nav-btn"/>
+        </VBox>
+
+        <!-- Push back button to bottom -->
+        <Region VBox.vgrow="ALWAYS"/>
+
+        <Button text="← Back to Sign In"
+                onAction="#handleBack"
+                styleClass="back-btn"/>
+    </VBox>
+
+    <!-- ================= RIGHT CONTENT ================= -->
+    <BorderPane HBox.hgrow="ALWAYS"
+	            styleClass="content-root">
+	
+	    <!-- HEADER -->
+	    <top>
+	        <HBox styleClass="header"
+	              alignment="CENTER_LEFT"
+	              spacing="10">
+	
+	            <Label fx:id="sectionTitle"
+	                   styleClass="header-title"/>
+	
+	            <Region HBox.hgrow="ALWAYS"/>
+	
+	            <Label fx:id="modeBadge"
+	                   styleClass="mode-badge"/>
+	        </HBox>
+	    </top>
+	
+	    <!-- CONTENT -->
+	    <center>
+	        <StackPane fx:id="contentArea"
+	                   styleClass="content-area"/>
+	    </center>
+	
+	</BorderPane>
+
+
+</HBox>

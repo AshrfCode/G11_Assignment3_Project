@@ -1,5 +1,7 @@
 package server;
 
+
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +12,12 @@ import common.Order;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import servergui.ServerMainController;
+
+import common.LoginRequest;
+import common.LoginResponse;
+import entities.User;
+import server.dao.MySQLUserDAO;
+
 
 
 public class BistroServer extends AbstractServer {
@@ -26,7 +34,37 @@ public class BistroServer extends AbstractServer {
 	
 	@Override
 	protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
-	    if (msg instanceof ClientRequest request) {
+	    
+		if (msg instanceof LoginRequest loginRequest) {
+
+		    try {
+		        MySQLUserDAO userDAO = new MySQLUserDAO();
+
+		        User user = userDAO.authenticate(
+		                loginRequest.getEmail(),
+		                loginRequest.getPassword()
+		        );
+
+		        if (user == null) {
+		            client.sendToClient("LOGIN_FAIL|Invalid email or password");
+		        } else {
+		            client.sendToClient(
+		                "LOGIN_OK|" + user.getRole() + "|" + user.getName()
+		            );
+		        }
+
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		        try {
+		            client.sendToClient("LOGIN_FAIL|Server error during login");
+		        } catch (Exception ignored) {}
+		    }
+
+		    return;
+		}
+
+		
+		else if (msg instanceof ClientRequest request) {
 	        try {
 	            String command = request.getCommand();
 	            Object[] params = request.getParams();
