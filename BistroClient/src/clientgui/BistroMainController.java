@@ -55,6 +55,7 @@ public class BistroMainController implements ChatIF {
 
                 switch (role) {
                     case "SUBSCRIBER" -> openSubscriberView(username);
+                    case "REPRESENTATIVE" -> openRepresentativeView(username);
 
                     default -> statusLabel.setText("Unknown role");
                 }
@@ -205,4 +206,45 @@ public class BistroMainController implements ChatIF {
             statusLabel.setText("Failed to open Subscriber view.");
         }
     }
+    
+    @FXML
+    private void openRepresentativeView(String username) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/representativegui/RepresentativeMain.fxml")
+            );
+
+            Parent root = loader.load();
+            representativegui.representativeMainController controller =
+                    loader.getController();
+
+            // Representatives usually work in restaurant context
+            // but we still respect the toggle for consistency
+            if (toggleHome.isSelected()) {
+                controller.setEntryMode(
+                    representativegui.representativeMainController.EntryMode.HOME
+                );
+            } else {
+                controller.setEntryMode(
+                    representativegui.representativeMainController.EntryMode.RESTAURANT
+                );
+            }
+
+            controller.setUsername(username);
+
+            Stage stage = (Stage) txtUsername.getScene().getWindow();
+            Scene scene = new Scene(root, 1000, 700);
+            stage.setScene(scene);
+
+            stage.centerOnScreen();
+            stage.setMinWidth(900);
+            stage.setMinHeight(600);
+            stage.setTitle("Bistro – Representative");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            statusLabel.setText("Failed to open Representative view.");
+        }
+    }
+
 }
