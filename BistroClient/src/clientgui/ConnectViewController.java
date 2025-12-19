@@ -48,35 +48,30 @@ public class ConnectViewController {
         }
 
         try {
-            // 🔹 Load Bistro Sign-In Screen
+            // Configure client connection BEFORE first use
+            client.ClientManager.configure(ip, port);
+
+            // Load Bistro Sign-In Screen
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/clientgui/BistroMain.fxml")
             );
             Parent root = loader.load();
 
-            // 🔹 Get controller
-            BistroMainController controller = loader.getController();
-            if (controller == null) {
-                statusLabel.setText("Failed to load BistroMainController.");
-                return;
-            }
+            // IMPORTANT:
+            // Do NOT create client here
+            // BistroMainController.initialize() will call ClientManager.getClient(this)
 
-            // 🔹 Create client and inject
-            ClientController client = new ClientController(ip, port, controller);
-            controller.setClient(client);
-
-            // 🔹 Switch scene
             Stage stage = (Stage) ipField.getScene().getWindow();
             Scene scene = new Scene(root, 1000, 700);
             stage.setScene(scene);
             stage.setTitle("Bistro – Sign In");
             stage.centerOnScreen();
             stage.show();
-            
 
         } catch (Exception e) {
             statusLabel.setText("Connection failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 }

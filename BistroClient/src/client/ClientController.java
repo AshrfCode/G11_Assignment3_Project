@@ -18,6 +18,11 @@ public class ClientController extends AbstractClient {
         this.ui = ui;
         openConnection();
     }
+    
+    public void setUI(ChatIF ui) {
+        this.ui = ui;
+    }
+
 
     @Override
     protected void handleMessageFromServer(Object msg) {

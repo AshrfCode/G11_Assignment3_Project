@@ -10,8 +10,13 @@
    ========================= */
 .left-pane {
     -fx-background-color: #425B58;
-    -fx-padding: 50;
+    -fx-padding: 0;
 }
+
+.left-content {
+    -fx-padding: 60;
+}
+
 
 .brand-title {
     -fx-font-size: 42px;
@@ -80,7 +85,7 @@
     -fx-background-color: #A1C0BB;
     -fx-text-fill: #425B58;
     -fx-font-weight: bold;
-    -fx-background-radius: 22;
+    -fx-background-radius: 10;
     -fx-padding: 9 0;
 }
 
@@ -98,7 +103,7 @@
     -fx-text-fill: #FFFFFF;
     -fx-font-size: 15px;
     -fx-font-weight: bold;
-    -fx-background-radius: 26;
+    -fx-background-radius: 15;
     -fx-padding: 12 0;
 }
 
@@ -114,7 +119,7 @@
     -fx-background-color: #FFC3A1;
     -fx-text-fill: #425B58;
     -fx-font-weight: bold;
-    -fx-background-radius: 20;
+    -fx-background-radius: 10;
     -fx-padding: 10 0;
 }
 
@@ -136,8 +141,8 @@
     -fx-background-color: transparent;
     -fx-border-color: #A1C0BB;
     -fx-border-width: 1.4;
-    -fx-border-radius: 20;
-    -fx-background-radius: 20;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
     -fx-text-fill: #425B58;
     -fx-font-weight: bold;
     -fx-padding: 8 0;
@@ -159,6 +164,24 @@
 
 .status-text {
     -fx-font-size: 13px;
-    -fx-text-fill: #425B58;
+    -fx-text-fill: #ee3f3f;
     -fx-font-weight: bold;
 }
+
+.tag-reader{
+	-fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #425B58;
+}
+
+.header-btn-danger {
+    -fx-background-color: #ff8178;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-background-radius: 10;
+
+    /* visual offset only — does NOT affect layout */
+    -fx-translate-x: 50;
+    -fx-translate-y: -30;
+}
+

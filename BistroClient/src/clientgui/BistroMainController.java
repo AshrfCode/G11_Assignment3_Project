@@ -1,7 +1,9 @@
 package clientgui;
 
 import client.ClientController;
+import client.ClientManager;
 import common.ChatIF;
+import common.ClientRequest;
 import guestgui.GuestMainController;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -22,10 +24,13 @@ public class BistroMainController implements ChatIF {
     @FXML private ToggleButton toggleRestaurant;
 
     private ClientController client;
-
-    public void setClient(ClientController client) {
-        this.client = client;
+    
+    @FXML
+    public void initialize() {
+        // Always get the singleton client and bind it to THIS UI
+        this.client = ClientManager.getClient(this);
     }
+
 
     @Override
     public void display(String message) {
@@ -128,6 +133,18 @@ public class BistroMainController implements ChatIF {
             e.printStackTrace();
             statusLabel.setText("Failed to open Guest view.");
         }
+    }
+    
+    // --------------------------------------------------------
+    // DISCONNECT
+    // --------------------------------------------------------
+    @FXML
+    public void handleExit() {
+        if (client != null && client.isConnected()) {
+            client.sendRequest(new ClientRequest("DISCONNECT", new Object[]{}));
+            client.closeConnectionSafely();
+        }
+        System.exit(0);
     }
     
     @FXML
