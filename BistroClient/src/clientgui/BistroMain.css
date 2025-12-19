@@ -179,9 +179,13 @@
     -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-background-radius: 10;
-
+	-fx-cursor: pointer;
     /* visual offset only — does NOT affect layout */
     -fx-translate-x: 50;
     -fx-translate-y: -30;
+}
+
+.header-btn-danger:hover {
+	-fx-background-color: #ff5145
 }
 
