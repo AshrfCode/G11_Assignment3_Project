@@ -20,8 +20,6 @@ public class MySQLUserDAO {
     	
         PooledConnection pConn = null;
         Connection conn = null;
-       
-
 
         try {
             // 1️⃣ Get connection from pool
