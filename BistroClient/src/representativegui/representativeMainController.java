@@ -1,5 +1,6 @@
 package representativegui;
 
+import common.UserRole;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -11,6 +12,8 @@ public class representativeMainController {
         HOME,
         RESTAURANT
     }
+    
+    private UserRole role = UserRole.REPRESENTATIVE;
 
     @FXML private Label sectionTitle;
     @FXML private Label modeBadge;
@@ -19,6 +22,8 @@ public class representativeMainController {
     @FXML private StackPane contentArea;
 
     @FXML private Button waitingListBtn;
+    @FXML private Button reportsBtn;
+
 
     private EntryMode entryMode = EntryMode.HOME;
     private String username = "Subscriber";
@@ -26,6 +31,7 @@ public class representativeMainController {
     @FXML
     public void initialize() {
         applyModeUI();
+        applyRoleUI();
         setUsername(username);
         showReservations(); // default page (you can change)
     }
@@ -41,12 +47,24 @@ public class representativeMainController {
         }
         heyUserLabel.setText("Hey " + this.username);
     }
+    
+    public void setRole(UserRole role) {
+        if (role != null) {
+            this.role = role;
+        }
+        applyRoleUI();
+        applyModeUI();
+    }
+
 
     private void applyModeUI() {
         boolean isRestaurant = (entryMode == EntryMode.RESTAURANT);
 
+        String modeText = isRestaurant ? "Restaurant Mode" : "Home Mode";
+        String roleText = (role != null) ? role.name() : "UNKNOWN";
+
         if (modeBadge != null) {
-            modeBadge.setText(isRestaurant ? "Restaurant Mode" : "Home Mode");
+            modeBadge.setText(roleText + " | " + modeText);
         }
 
         if (waitingListBtn != null) {
@@ -54,6 +72,7 @@ public class representativeMainController {
             waitingListBtn.setManaged(isRestaurant);
         }
     }
+
 
     // ---------------- NAV ACTIONS ----------------
 
@@ -79,6 +98,12 @@ public class representativeMainController {
     private void showReports() {
         setSection("Reports");
         setPlaceholder("View restaurant activity reports.");
+    }
+    
+    @FXML
+    private void showVisualReports() {
+        setSection("Visual");
+        setPlaceholder("View visual restaurant activity reports.");
     }
 
     @FXML
@@ -126,4 +151,14 @@ public class representativeMainController {
         lbl.getStyleClass().add("placeholder-text");
         contentArea.getChildren().add(lbl);
     }
+    
+    private void applyRoleUI() {
+        boolean isManager = (role == UserRole.MANAGER);
+
+        if (reportsBtn != null) {
+            reportsBtn.setVisible(isManager);
+            reportsBtn.setManaged(isManager);
+        }
+    }
+
 }

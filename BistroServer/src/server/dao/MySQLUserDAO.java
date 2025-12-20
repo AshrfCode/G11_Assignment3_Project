@@ -17,9 +17,11 @@ public class MySQLUserDAO {
     private final MySQLConnectionPool pool = MySQLConnectionPool.getInstance();
 
     public User authenticate(String email, String password) throws SQLException {
-
+    	
         PooledConnection pConn = null;
         Connection conn = null;
+       
+
 
         try {
             // 1️⃣ Get connection from pool
@@ -63,7 +65,7 @@ public class MySQLUserDAO {
 
                     case REPRESENTATIVE -> loadRepresentative(conn, user);
 
-                    case MANAGER -> user;
+                    case MANAGER -> loadRepresentative(conn, user);
                 };
             }
 
@@ -121,4 +123,5 @@ public class MySQLUserDAO {
             );
         }
     }
+    
 }

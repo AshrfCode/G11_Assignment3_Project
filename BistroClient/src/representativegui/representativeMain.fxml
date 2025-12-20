@@ -35,6 +35,12 @@
 		    <Button text="Reports"
 		            onAction="#showReports"
 		            styleClass="nav-btn"/>
+		            
+		    <Button fx:id="reportsBtn"
+			        text="Visual Reports"
+			        onAction="#showVisualReports"
+			        styleClass="nav-btn"/>
+		    
 		</VBox>
 
 

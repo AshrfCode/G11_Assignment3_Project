@@ -39,14 +39,14 @@
    LOGOUT BUTTON (like back but different label)
 ========================= */
 .logout-btn {
-    -fx-background-color: transparent;
+    -fx-background-color: #ff8178;
     -fx-text-fill: #FFFFFF;
     -fx-font-size: 13px;
     -fx-padding: 8 12;
 }
 
 .logout-btn:hover {
-    -fx-text-fill: #FFC3A1;
+    -fx-background-color: #ff5145;
 }
 
 /* =========================

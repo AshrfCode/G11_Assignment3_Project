@@ -60,7 +60,8 @@ public class BistroMainController implements ChatIF {
 
                 switch (role) {
                     case "SUBSCRIBER" -> openSubscriberView(username);
-                    case "REPRESENTATIVE" -> openRepresentativeView(username);
+                    case "REPRESENTATIVE", "MANAGER" -> openRepresentativeView(username, role);
+
 
                     default -> statusLabel.setText("Unknown role");
                 }
@@ -225,7 +226,7 @@ public class BistroMainController implements ChatIF {
     }
     
     @FXML
-    private void openRepresentativeView(String username) {
+    private void openRepresentativeView(String username, String role){
         try {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/representativegui/RepresentativeMain.fxml")
@@ -248,6 +249,8 @@ public class BistroMainController implements ChatIF {
             }
 
             controller.setUsername(username);
+            controller.setRole(common.UserRole.valueOf(role));
+
 
             Stage stage = (Stage) txtUsername.getScene().getWindow();
             Scene scene = new Scene(root, 1000, 700);
