@@ -1,5 +1,6 @@
 package guestgui;
 
+import client.ClientController;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -17,6 +18,7 @@ public class GuestMainController {
     }
 
     private EntryMode entryMode = EntryMode.RESTAURANT; // default
+    private ClientController client;
 
     @FXML
     private Button waitingListBtn;
@@ -30,10 +32,15 @@ public class GuestMainController {
     @FXML
     private StackPane contentArea;
 
+    public void setClient(ClientController client) {
+        this.client = client;
+        // Added: reload reservation screen after client arrives so ReservationController gets a real client.
+        showReservation();
+    }
+    
     @FXML
     public void initialize() {
         applyEntryMode();
-        showReservation();
     }
 
     public void setEntryMode(EntryMode mode) {
@@ -55,11 +62,23 @@ public class GuestMainController {
 
     @FXML
     private void showReservation() {
-    	sectionTitle.setText("Make Reservation");
-        contentArea.getChildren().setAll(
-                new Label("Reservation screen (guest)")
-        );
+        sectionTitle.setText("Make Reservation");
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/ReservationView.fxml"));
+            Parent view = loader.load();
+
+            ReservationController controller = loader.getController();
+            controller.setClient(client); // inject client (now it is not null)
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            contentArea.getChildren().setAll(new Label("❌ Failed to load reservation screen."));
+        }
     }
+
 
     @FXML
     private void showWaitingList() {

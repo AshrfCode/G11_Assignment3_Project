@@ -1,7 +1,5 @@
 package server;
 
-
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -14,147 +12,183 @@ import ocsf.server.ConnectionToClient;
 import servergui.ServerMainController;
 
 import common.LoginRequest;
-import common.LoginResponse;
 import entities.User;
 import server.dao.MySQLUserDAO;
 
-
-
 public class BistroServer extends AbstractServer {
 
-	private Map<ConnectionToClient, String[]> clientInfoMap = new ConcurrentHashMap<>();
-	private DBController db = new DBController();
+    private Map<ConnectionToClient, String[]> clientInfoMap = new ConcurrentHashMap<>();
+    private DBController db = new DBController();
 
-	private ServerMainController guiController;
+    private ServerMainController guiController;
 
-	public BistroServer(int port, ServerMainController guiController) {
-	    super(port);
-	    this.guiController = guiController;
-	}
-	
-	@Override
-	protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
-	    
-		if (msg instanceof LoginRequest loginRequest) {
+    public BistroServer(int port, ServerMainController guiController) {
+        super(port);
+        this.guiController = guiController;
+    }
 
-		    try {
-		        MySQLUserDAO userDAO = new MySQLUserDAO();
+    @Override
+    protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
 
-		        User user = userDAO.authenticate(
-		                loginRequest.getEmail(),
-		                loginRequest.getPassword()
-		        );
+        if (msg instanceof LoginRequest loginRequest) {
 
-		        if (user == null) {
-		            client.sendToClient("LOGIN_FAIL|Invalid email or password");
-		        } else {
-		            client.sendToClient(
-		                "LOGIN_OK|" + user.getRole() + "|" + user.getName()
-		            );
-		        }
+            try {
+                MySQLUserDAO userDAO = new MySQLUserDAO();
 
-		    } catch (Exception e) {
-		        e.printStackTrace();
-		        try {
-		            client.sendToClient("LOGIN_FAIL|Server error during login");
-		        } catch (Exception ignored) {}
-		    }
+                User user = userDAO.authenticate(
+                        loginRequest.getEmail(),
+                        loginRequest.getPassword()
+                );
 
-		    return;
-		}
+                if (user == null) {
+                    client.sendToClient("LOGIN_FAIL|Invalid email or password");
+                } else {
+                    // Changed: include id + email + phone so subscriber reservation can be auto-filled.
+                    String safeEmail = (user.getEmail() == null) ? "" : user.getEmail();
+                    String safePhone = (user.getPhone() == null) ? "" : user.getPhone();
 
-		
-		else if (msg instanceof ClientRequest request) {
-	        try {
-	            String command = request.getCommand();
-	            Object[] params = request.getParams();
+                    client.sendToClient(
+                            "LOGIN_OK|" + user.getRole() + "|" + user.getName()
+                                    + "|" + user.getId()
+                                    + "|" + safeEmail
+                                    + "|" + safePhone
+                    );
+                }
 
-	            switch (command) {
+            } catch (Exception e) {
+                e.printStackTrace();
+                try {
+                    client.sendToClient("LOGIN_FAIL|Server error during login");
+                } catch (Exception ignored) {}
+            }
 
-	                case "GET_ALL_ORDERS":
-	                    List<Order> orders = db.getAllOrders();
-	                    client.sendToClient(orders);
-	                    break;
+            return;
+        }
 
-	                case "UPDATE_ORDER_DATE":
-	                    int orderId = Integer.parseInt(params[0].toString());
-	                    java.sql.Date newDate = java.sql.Date.valueOf(params[1].toString());
+        else if (msg instanceof ClientRequest request) {
+            try {
+                String command = request.getCommand();
+                Object[] params = request.getParams();
 
-	                    boolean dateUpdated = db.updateOrderDate(orderId, newDate);
+                switch (command) {
 
-	                    if (dateUpdated) {
-	                        client.sendToClient("OK_DATE");
-	                    } else {
-	                        client.sendToClient("ERROR_DATE");
-	                    }
+                    case "GET_ALL_ORDERS":
+                        List<Order> orders = db.getAllOrders();
+                        client.sendToClient(orders);
+                        break;
 
-	                    break;
+                    case "UPDATE_ORDER_DATE":
+                        int orderId = Integer.parseInt(params[0].toString());
+                        java.sql.Date newDate = java.sql.Date.valueOf(params[1].toString());
 
+                        boolean dateUpdated = db.updateOrderDate(orderId, newDate);
 
-	                case "UPDATE_NUMBER_OF_GUESTS":
-	                    int orderIdGuests = Integer.parseInt(params[0].toString());
-	                    int newGuests = Integer.parseInt(params[1].toString());
+                        if (dateUpdated) {
+                            client.sendToClient("OK_DATE");
+                        } else {
+                            client.sendToClient("ERROR_DATE");
+                        }
 
-	                    boolean guestsUpdated = db.updateNumberOfGuests(orderIdGuests, newGuests);
+                        break;
 
-	                    if (guestsUpdated) {
-	                        client.sendToClient("OK_GUESTS");
-	                    } else {
-	                        client.sendToClient("ERROR_GUESTS");
-	                    }
-	                    break;
+                    case "UPDATE_NUMBER_OF_GUESTS":
+                        int orderIdGuests = Integer.parseInt(params[0].toString());
+                        int newGuests = Integer.parseInt(params[1].toString());
 
+                        boolean guestsUpdated = db.updateNumberOfGuests(orderIdGuests, newGuests);
 
-	                case "DISCONNECT":
-	                    client.close();
-	                    break;
+                        if (guestsUpdated) {
+                            client.sendToClient("OK_GUESTS");
+                        } else {
+                            client.sendToClient("ERROR_GUESTS");
+                        }
+                        break;
 
-	                default:
-	                    client.sendToClient("❌ Unknown command: " + command);
-	            }
+                    // Reservation commands
+                    case ClientRequest.CMD_GET_AVAILABLE_SLOTS:
+                        String dateStr = params[0].toString();
+                        int diners = Integer.parseInt(params[1].toString());
 
-	        } catch (Exception e) {
-	            System.err.println("❌ Error handling client request: " + e.getMessage());
-	            e.printStackTrace();
-	            try {
-	                client.sendToClient("❌ Error processing command: " + e.getMessage());
-	            } catch (IOException ioException) {
-	                ioException.printStackTrace();
-	            }
-	        }
-	    } else {
-	        System.err.println("⚠️ Received unsupported message type: " + msg.getClass().getName());
-	    }
-	}
+                        List<String> slots = db.getAvailableReservationSlots(dateStr, diners);
+                        client.sendToClient(slots);
+                        break;
 
-	@Override
-	protected void clientConnected(ConnectionToClient client) {
-	    String ip = client.getInetAddress().getHostAddress();
-	    String host = client.getInetAddress().getHostName();
-	    int id = client.hashCode();
+                    case ClientRequest.CMD_CREATE_RESERVATION:
+                        String dateTimeStr = params[0].toString();
+                        int dinersToReserve = Integer.parseInt(params[1].toString());
+                        String customerIdOrEmail = params[2].toString();
+                        String phone = params[3].toString();
+                        String email = (params.length >= 5 && params[4] != null) ? params[4].toString() : "";
 
-	    clientInfoMap.put(client, new String[]{ip, host});
+                        String code = db.createReservation(dateTimeStr, dinersToReserve, customerIdOrEmail, phone, email);
 
-	    if (guiController != null) {
-	        guiController.addClient(ip, host, id);
-	    }
+                        if (code != null && !code.isEmpty()) {
+                            client.sendToClient("RESERVATION_OK|" + code);
+                        } else {
+                            client.sendToClient("RESERVATION_FAIL");
+                        }
+                        break;
 
-	    System.out.println("✅ Client connected: " + ip + " / " + host);
-	}
+                    case ClientRequest.CMD_CANCEL_RESERVATION:
+                        String reservationCode = params[0].toString();
+                        boolean canceled = db.cancelReservation(reservationCode);
 
+                        if (canceled) {
+                            client.sendToClient("CANCEL_OK");
+                        } else {
+                            client.sendToClient("CANCEL_FAIL");
+                        }
+                        break;
 
-	@Override
-	protected synchronized void clientDisconnected(ConnectionToClient client) {
-	    String[] info = clientInfoMap.getOrDefault(client, new String[]{"unknown", "unknown"});
-	    String ip = info[0];
-	    String host = info[1];
-	    int id = client.hashCode();
+                    case "DISCONNECT":
+                        client.close();
+                        break;
 
-	    if (guiController != null) {
-	        guiController.updateClientStatus(id, "Disconnected");
-	    }
+                    default:
+                        client.sendToClient("❌ Unknown command: " + command);
+                }
 
-	    System.out.println("❌ Client disconnected: " + ip + " / " + host);
-	    clientInfoMap.remove(client);
-	}
+            } catch (Exception e) {
+                System.err.println("❌ Error handling client request: " + e.getMessage());
+                e.printStackTrace();
+                try {
+                    client.sendToClient("❌ Error processing command: " + e.getMessage());
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        } else {
+            System.err.println("⚠️ Received unsupported message type: " + msg.getClass().getName());
+        }
+    }
+
+    @Override
+    protected void clientConnected(ConnectionToClient client) {
+        String ip = client.getInetAddress().getHostAddress();
+        String host = client.getInetAddress().getHostName();
+        int id = client.hashCode();
+
+        clientInfoMap.put(client, new String[] { ip, host });
+
+        if (guiController != null) {
+            guiController.addClient(ip, host, id);
+        }
+
+        System.out.println("✅ Client connected: " + ip + " / " + host);
+    }
+
+    @Override
+    protected synchronized void clientDisconnected(ConnectionToClient client) {
+        String[] info = clientInfoMap.getOrDefault(client, new String[] { "unknown", "unknown" });
+        String ip = info[0];
+        String host = info[1];
+        int id = client.hashCode();
+
+        if (guiController != null) {
+            guiController.updateClientStatus(id, "Disconnected");
+        }
+
+        System.out.println("❌ Client disconnected: " + ip + " / " + host);
+        clientInfoMap.remove(client);
+    }
 }

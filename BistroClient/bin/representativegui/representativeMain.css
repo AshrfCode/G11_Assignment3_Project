@@ -1,0 +1,94 @@
+/* =========================
+   ROOT
+========================= */
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: #FFFFFF;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+.sidebar {
+    -fx-background-color: #425B58;
+    -fx-padding: 24;
+    -fx-spacing: 20;
+}
+
+.logo {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.nav-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 14px;
+    -fx-padding: 10 14;
+    -fx-alignment: CENTER_LEFT;
+    -fx-background-radius: 8;
+}
+
+.nav-btn:hover {
+    -fx-background-color: #A1C0BB;
+    -fx-text-fill: #425B58;
+}
+
+/* =========================
+   LOGOUT BUTTON (like back but different label)
+========================= */
+.logout-btn {
+    -fx-background-color: #ff8178;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 13px;
+    -fx-padding: 8 12;
+}
+
+.logout-btn:hover {
+    -fx-background-color: #ff5145;
+}
+
+/* =========================
+   HEADER
+========================= */
+.header {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #A1C0BB;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 16 24;
+}
+
+.header-title {
+    -fx-text-fill: #425B58;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.mode-badge {
+    -fx-background-color: #FFC3A1;
+    -fx-text-fill: #425B58;
+    -fx-padding: 6 12;
+    -fx-background-radius: 12;
+    -fx-font-size: 12px;
+}
+
+/* Hey username (right of badge) */
+.hey-user {
+    -fx-text-fill: #425B58;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* =========================
+   CONTENT AREA
+========================= */
+.content-area {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 32;
+}
+
+.placeholder-text {
+    -fx-text-fill: #425B58;
+    -fx-font-size: 14px;
+}

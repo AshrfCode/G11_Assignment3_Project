@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="guestgui.ReservationController"
+      spacing="12" style="-fx-padding: 18;">
+
+    <Label text="Reservation" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+    <HBox spacing="10">
+        <VBox spacing="6">
+            <Label text="Date"/>
+            <DatePicker fx:id="datePicker"/>
+        </VBox>
+
+        <VBox spacing="6">
+            <Label text="Diners"/>
+            <TextField fx:id="dinersField" promptText="e.g. 2"/>
+        </VBox>
+
+        <VBox spacing="6">
+            <Label text="Time (available slots)"/>
+            <ComboBox fx:id="timeCombo" promptText="Choose or type time" editable="true"/>
+
+        </VBox>
+    </HBox>
+
+    <Button text="Check availability" onAction="#handleCheckAvailability"/>
+
+    <Separator/>
+
+	<Label text="Guest details" style="-fx-font-weight: bold;"/>
+	
+	<HBox spacing="10" alignment="CENTER_LEFT">
+	    <TextField fx:id="phoneField" promptText="Phone"/>
+	
+	    <Label text="or"/>
+	
+	    <TextField fx:id="emailField" promptText="Email"/>
+	</HBox>
+
+    <Button text="Reserve" onAction="#handleReserve"/>
+
+    <Separator/>
+
+    <Label text="Cancel reservation" style="-fx-font-weight: bold;"/>
+    <HBox spacing="10">
+        <TextField fx:id="cancelCodeField" promptText="Confirmation code"/>
+        <Button text="Cancel" onAction="#handleCancel"/>
+    </HBox>
+
+    <Label fx:id="statusLabel" text=""/>
+</VBox>
