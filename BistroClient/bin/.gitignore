@@ -1,4 +1,6 @@
-/clientgui/
+/.DS_Store
 /client/
-/subscribergui/
+/clientgui/
 /guestgui/
+/representativegui/
+/subscribergui/

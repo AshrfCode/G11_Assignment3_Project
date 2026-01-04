@@ -12,32 +12,22 @@ import javafx.stage.Stage;
 
 public class GuestMainController {
 
-    public enum EntryMode {
-        HOME,
-        RESTAURANT
-    }
+    public enum EntryMode { HOME, RESTAURANT }
 
-    private EntryMode entryMode = EntryMode.RESTAURANT; // default
+    private EntryMode entryMode = EntryMode.RESTAURANT;
     private ClientController client;
 
-    @FXML
-    private Button waitingListBtn;
-
-    @FXML
-    private Label sectionTitle;
-
-    @FXML
-    private Label modeBadge;
-
-    @FXML
-    private StackPane contentArea;
+    @FXML private Button waitingListBtn;
+    @FXML private Label sectionTitle;
+    @FXML private Label modeBadge;
+    @FXML private StackPane contentArea;
 
     public void setClient(ClientController client) {
         this.client = client;
-        // Added: reload reservation screen after client arrives so ReservationController gets a real client.
+        // Reload reservation after client arrives
         showReservation();
     }
-    
+
     @FXML
     public void initialize() {
         applyEntryMode();
@@ -49,27 +39,27 @@ public class GuestMainController {
     }
 
     private void applyEntryMode() {
-        if (entryMode == EntryMode.HOME) {
-            waitingListBtn.setVisible(false);
-            waitingListBtn.setManaged(false);
-            modeBadge.setText("Home Mode");
-        } else {
-            waitingListBtn.setVisible(true);
-            waitingListBtn.setManaged(true);
-            modeBadge.setText("Restaurant Mode");
+        boolean isRestaurant = (entryMode == EntryMode.RESTAURANT);
+
+        if (waitingListBtn != null) {
+            waitingListBtn.setVisible(isRestaurant);
+            waitingListBtn.setManaged(isRestaurant);
+        }
+        if (modeBadge != null) {
+            modeBadge.setText(isRestaurant ? "Restaurant Mode" : "Home Mode");
         }
     }
 
     @FXML
     private void showReservation() {
-        sectionTitle.setText("Make Reservation");
+        if (sectionTitle != null) sectionTitle.setText("Make Reservation");
 
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/ReservationView.fxml"));
             Parent view = loader.load();
 
             ReservationController controller = loader.getController();
-            controller.setClient(client); // inject client (now it is not null)
+            controller.setClient(client); // inject client
 
             contentArea.getChildren().setAll(view);
 
@@ -79,44 +69,50 @@ public class GuestMainController {
         }
     }
 
+    // NEW: cancel page as a separate category
+    @FXML
+    private void showCancelReservation() {
+        if (sectionTitle != null) sectionTitle.setText("Cancel Reservation");
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/CancelReservationView.fxml"));
+            Parent view = loader.load();
+
+            CancelReservationController controller = loader.getController();
+            controller.setClient(client); // inject client
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            contentArea.getChildren().setAll(new Label("❌ Failed to load cancel screen."));
+        }
+    }
 
     @FXML
     private void showWaitingList() {
-    	sectionTitle.setText("Waiting List");
-        contentArea.getChildren().setAll(
-                new Label("Waiting list (restaurant only)")
-        );
+        if (sectionTitle != null) sectionTitle.setText("Waiting List");
+        contentArea.getChildren().setAll(new Label("Waiting list (restaurant only)"));
     }
 
     @FXML
     private void showPayment() {
-    	sectionTitle.setText("Payment");
-        contentArea.getChildren().setAll(
-                new Label("Payment screen (guest)")
-        );
+        if (sectionTitle != null) sectionTitle.setText("Payment");
+        contentArea.getChildren().setAll(new Label("Payment screen (guest)"));
     }
-    
+
     @FXML
     private void handleBack() {
         try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/clientgui/BistroMain.fxml")
-            );
-
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientgui/BistroMain.fxml"));
             Parent root = loader.load();
 
             Stage stage = (Stage) contentArea.getScene().getWindow();
-
-            // ✅ FORCE SAME SIZE
-            Scene scene = new Scene(root, 1000, 700);
-            stage.setScene(scene);
+            stage.setScene(new Scene(root, 1000, 700));
             stage.setTitle("Bistro – Sign In");
             stage.centerOnScreen();
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
-
 }

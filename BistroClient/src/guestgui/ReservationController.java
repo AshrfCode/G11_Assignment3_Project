@@ -21,12 +21,11 @@ public class ReservationController {
     @FXML private TextField dinersField;
     @FXML private TextField phoneField;
     @FXML private TextField emailField;
-
-    @FXML private TextField cancelCodeField;
     @FXML private Label statusLabel;
 
     private ClientController client;
 
+    // Subscriber mode: auto-fill + lock email/phone, and send subscriberId to server
     private boolean subscriberMode = false;
     private int subscriberId = -1;
 
@@ -86,33 +85,28 @@ public class ReservationController {
             return;
         }
 
+        // keep typed time
         String chosenTime = timeCombo.getValue();
         if (chosenTime == null || chosenTime.isEmpty()) {
             chosenTime = timeCombo.getEditor() != null ? timeCombo.getEditor().getText().trim() : "";
         }
 
+        // validate time format if typed
         if (chosenTime != null && !chosenTime.isEmpty()) {
-            LocalTime t;
             try {
-                t = LocalTime.parse(chosenTime);
+                LocalTime t = LocalTime.parse(chosenTime);
+                LocalDateTime requested = LocalDateTime.of(date, t);
+
+                if (requested.isBefore(LocalDateTime.now().plusHours(1))) {
+                    setStatus("❌ Reservation must be at least 1 hour from now. Choose a later time.");
+                    return;
+                }
+                if (requested.isAfter(LocalDateTime.now().plusMonths(1))) {
+                    setStatus("❌ Reservation can be made up to 1 month ahead. Choose an earlier date/time.");
+                    return;
+                }
             } catch (Exception ex) {
                 setStatus("❌ Time format must be HH:mm (example: 19:30).");
-                if (timeCombo.getEditor() != null) timeCombo.getEditor().setText(chosenTime);
-                timeCombo.setValue(chosenTime);
-                return;
-            }
-
-            LocalDateTime requested = LocalDateTime.of(date, t);
-            if (requested.isBefore(LocalDateTime.now().plusHours(1))) {
-                setStatus("❌ Reservation must be at least 1 hour from now. Choose a later time.");
-                if (timeCombo.getEditor() != null) timeCombo.getEditor().setText(chosenTime);
-                timeCombo.setValue(chosenTime);
-                return;
-            }
-            if (requested.isAfter(LocalDateTime.now().plusMonths(1))) {
-                setStatus("❌ Reservation can be made up to 1 month ahead. Choose an earlier date/time.");
-                if (timeCombo.getEditor() != null) timeCombo.getEditor().setText(chosenTime);
-                timeCombo.setValue(chosenTime);
                 return;
             }
         }
@@ -123,7 +117,6 @@ public class ReservationController {
         ClientSession.activeHandler = (msg) -> {
             if (msg instanceof List<?> list) {
                 Platform.runLater(() -> {
-
                     if (timeCombo.getEditor() != null) timeCombo.getEditor().setText(timeForMsg);
                     timeCombo.setValue(timeForMsg);
 
@@ -143,8 +136,8 @@ public class ReservationController {
                             for (String s : slots) {
                                 if (timeForMsg.equals(s)) { ok = true; break; }
                             }
-                            setStatus(ok ? "✅ Available at " + timeForMsg + "." :
-                                           "❌ Full at " + timeForMsg + ". Choose another time.");
+                            setStatus(ok ? "✅ Available at " + timeForMsg + "."
+                                    : "❌ Full at " + timeForMsg + ". Choose another time.");
                         } else {
                             setStatus("✅ Available times loaded.");
                         }
@@ -210,9 +203,7 @@ public class ReservationController {
             return;
         }
 
-        String requestedTime = time;
         String dateTimeStr = date + " " + time;
-
         setStatus("Sending reservation...");
 
         ClientSession.activeHandler = (msg) -> {
@@ -223,67 +214,21 @@ public class ReservationController {
                         setStatus("✅ Reserved! Confirmation code: " + code);
                     });
                 } else if (s.startsWith("RESERVATION_FAIL")) {
-                    Platform.runLater(() ->
-                        setStatus("❌ Full at " + requestedTime + ". Choose another time.")
-                    );
-
-                    ClientSession.activeHandler = (msg2) -> {
-                        if (msg2 instanceof List<?> list) {
-                            Platform.runLater(() -> {
-                                if (!list.isEmpty() && list.get(0) instanceof String) {
-                                    @SuppressWarnings("unchecked")
-                                    List<String> slots = (List<String>) list;
-                                    timeCombo.setItems(FXCollections.observableArrayList(slots));
-                                }
-                                setStatus("❌ Full at " + requestedTime + ". Choose another time.");
-                            });
-                        }
-                    };
-
+                    Platform.runLater(() -> setStatus("❌ Full. Choose another time."));
+                    // refresh available slots
                     client.requestAvailableSlots(date.toString(), diners);
                 }
             }
         };
+        
+        String customerKey = (subscriberMode && subscriberId > 0)
+                ? "SUB:" + subscriberId    // ✅ important: mark as subscriber id
+                : (!email.isEmpty() ? email : phone);
 
-        String customerKey;
-        String chosenEmail;
 
-        if (subscriberMode && subscriberId > 0) {
-            customerKey = String.valueOf(subscriberId); // ✅ subscriber_id saved in DB
-            chosenEmail = email;
-        } else {
-            customerKey = !email.isEmpty() ? email : phone;
-            chosenEmail = !email.isEmpty() ? email : "";
-        }
+        String chosenEmail = (!email.isEmpty()) ? email : "";
 
         client.createReservation(dateTimeStr, diners, customerKey, phone, chosenEmail);
-    }
-
-    @FXML
-    private void handleCancel() {
-        if (client == null) {
-            setStatus("❌ No client connection.");
-            return;
-        }
-
-        String code = cancelCodeField.getText() == null ? "" : cancelCodeField.getText().trim();
-        if (code.isEmpty()) {
-            setStatus("❌ Enter confirmation code to cancel.");
-            return;
-        }
-
-        setStatus("Canceling...");
-
-        ClientSession.activeHandler = (msg) -> {
-            if (msg instanceof String s) {
-                Platform.runLater(() -> {
-                    if (s.equals("CANCEL_OK")) setStatus("✅ Reservation canceled.");
-                    else setStatus("❌ Cancel failed (wrong code or already canceled).");
-                });
-            }
-        };
-
-        client.cancelReservation(code);
     }
 
     private int parsePositiveInt(String s) {

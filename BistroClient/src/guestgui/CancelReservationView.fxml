@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="guestgui.CancelReservationController"
+      spacing="12"
+      style="-fx-padding: 18;">
+
+    <Label text="Cancel reservation"
+           style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <TextField fx:id="cancelCodeField" promptText="Confirmation code"/>
+        <Button text="Cancel" onAction="#handleCancel"/>
+    </HBox>
+
+    <Label fx:id="statusLabel" text=""/>
+</VBox>

@@ -101,6 +101,14 @@ public class ClientController extends AbstractClient {
                 new Object[]{confirmationCode}));
     }
 
+    public void cancelReservationAsSubscriber(String confirmationCode, int subscriberId, String email, String phone) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_CANCEL_RESERVATION,
+                new Object[]{confirmationCode, subscriberId, email, phone}));
+    }
+
+
+
+
     public void closeConnectionSafely() {
         try {
             closeConnection();

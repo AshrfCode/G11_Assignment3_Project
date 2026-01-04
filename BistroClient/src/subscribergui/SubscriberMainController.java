@@ -1,15 +1,16 @@
 package subscribergui;
 
 import client.ClientController;
+import guestgui.CancelReservationController;
 import guestgui.ReservationController;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import javafx.scene.Scene;
 
 public class SubscriberMainController {
 
@@ -31,12 +32,12 @@ public class SubscriberMainController {
 
     @FXML
     public void initialize() {
-        // IMPORTANT: do NOT load reservation here (client may still be null)
+        // Don't load pages here (client can still be null)
         applyModeUI();
         setUsername(username);
     }
 
-    // ✅ This is called after login (from BistroMainController)
+    // Called after login
     public void initAfterLogin(ClientController client, EntryMode mode,
                                String username, int id, String email, String phone) {
 
@@ -50,10 +51,10 @@ public class SubscriberMainController {
         setUsername(username);
         applyModeUI();
 
-        showReservation(); // ✅ now it’s safe
+        showReservation(); // safe now
     }
 
-    // ✅ keep this because your stub calls it
+    // Keep for stub usage
     public void setEntryMode(EntryMode mode) {
         this.entryMode = mode;
         applyModeUI();
@@ -78,7 +79,6 @@ public class SubscriberMainController {
     }
 
     // ---------------- NAV ACTIONS ----------------
-    // ✅ These MUST exist if SubscriberMain.fxml references them in onAction
 
     @FXML
     private void showReservation() {
@@ -89,12 +89,8 @@ public class SubscriberMainController {
             Parent view = loader.load();
 
             ReservationController controller = loader.getController();
-
-            // ✅ must exist, otherwise Reservation screen says "No client connection"
-            controller.setClient(client);
-
-            // ✅ auto-fill + lock for subscriber
-            controller.setSubscriberInfo(subscriberId, subscriberEmail, subscriberPhone);
+            controller.setClient(client); // inject client
+            controller.setSubscriberInfo(subscriberId, subscriberEmail, subscriberPhone); // auto-fill + lock
 
             contentArea.getChildren().setAll(view);
 
@@ -104,6 +100,29 @@ public class SubscriberMainController {
         }
     }
 
+    @FXML
+    private void showCancelReservation() {
+        setSection("Cancel Reservation");
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/CancelReservationView.fxml"));
+            Parent view = loader.load();
+
+            CancelReservationController controller = loader.getController();
+            controller.setClient(client);
+
+            // ✅ THIS is what prevents subscriber B from canceling subscriber A
+            controller.setSubscriberInfo(subscriberId, subscriberEmail, subscriberPhone);
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setPlaceholder("❌ Failed to load cancel reservation screen.");
+        }
+    }
+
+    
     @FXML
     private void showWaitingList() {
         setSection("Waiting List");

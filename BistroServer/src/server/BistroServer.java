@@ -129,16 +129,29 @@ public class BistroServer extends AbstractServer {
                         }
                         break;
 
-                    case ClientRequest.CMD_CANCEL_RESERVATION:
+                    case ClientRequest.CMD_CANCEL_RESERVATION: {
                         String reservationCode = params[0].toString();
-                        boolean canceled = db.cancelReservation(reservationCode);
 
-                        if (canceled) {
-                            client.sendToClient("CANCEL_OK");
+                        String result;
+
+                        if (params.length == 1) {
+                            // guest
+                            result = db.cancelReservation(reservationCode);
                         } else {
-                            client.sendToClient("CANCEL_FAIL");
+                            // subscriber
+                            Integer requesterId = Integer.parseInt(params[1].toString());
+                            String requesterEmail = (params.length >= 3 && params[2] != null) ? params[2].toString() : "";
+                            String requesterPhone = (params.length >= 4 && params[3] != null) ? params[3].toString() : "";
+
+                            result = db.cancelReservation(reservationCode, requesterId, requesterEmail, requesterPhone, true);
                         }
+
+                        client.sendToClient(result); // send CANCEL_OK / CANCEL_FAIL_...
                         break;
+                    }
+
+
+
 
                     case "DISCONNECT":
                         client.close();

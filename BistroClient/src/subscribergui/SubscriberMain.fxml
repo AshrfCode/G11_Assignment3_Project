@@ -8,7 +8,6 @@
       fx:controller="subscribergui.SubscriberMainController"
       stylesheets="@SubscriberMain.css">
 
-    <!-- ================= SIDEBAR (FULL HEIGHT) ================= -->
     <VBox prefWidth="240"
           styleClass="sidebar"
           spacing="20">
@@ -36,9 +35,13 @@
             <Button text="View History"
                     onAction="#showHistory"
                     styleClass="nav-btn"/>
+                    
+            <Button text="Cancel Reservation"
+                    onAction="#showCancelReservation"
+                    styleClass="nav-btn"/>
+                    
         </VBox>
 
-        <!-- Push logout button to bottom -->
         <Region VBox.vgrow="ALWAYS"/>
 
         <Button text="Logout"
@@ -46,11 +49,9 @@
                 styleClass="logout-btn"/>
     </VBox>
 
-    <!-- ================= RIGHT CONTENT ================= -->
     <BorderPane HBox.hgrow="ALWAYS"
                 styleClass="content-root">
 
-        <!-- HEADER -->
         <top>
             <HBox styleClass="header"
                   alignment="CENTER_LEFT"
@@ -69,7 +70,6 @@
             </HBox>
         </top>
 
-        <!-- CONTENT -->
         <center>
             <StackPane fx:id="contentArea"
                        styleClass="content-area"/>

@@ -8,7 +8,6 @@
       fx:controller="guestgui.GuestMainController"
       stylesheets="@GuestMain.css">
 
-    <!-- ================= SIDEBAR (FULL HEIGHT) ================= -->
     <VBox prefWidth="240"
           styleClass="sidebar"
           spacing="20">
@@ -28,9 +27,13 @@
             <Button text="Pay"
                     onAction="#showPayment"
                     styleClass="nav-btn"/>
+                    
+            <Button text="Cancel Reservation"
+                    onAction="#showCancelReservation"
+                    styleClass="nav-btn"/>
+                    
         </VBox>
 
-        <!-- Push back button to bottom -->
         <Region VBox.vgrow="ALWAYS"/>
 
         <Button text="← Back to Sign In"
@@ -38,33 +41,29 @@
                 styleClass="back-btn"/>
     </VBox>
 
-    <!-- ================= RIGHT CONTENT ================= -->
     <BorderPane HBox.hgrow="ALWAYS"
-	            styleClass="content-root">
-	
-	    <!-- HEADER -->
-	    <top>
-	        <HBox styleClass="header"
-	              alignment="CENTER_LEFT"
-	              spacing="10">
-	
-	            <Label fx:id="sectionTitle"
-	                   styleClass="header-title"/>
-	
-	            <Region HBox.hgrow="ALWAYS"/>
-	
-	            <Label fx:id="modeBadge"
-	                   styleClass="mode-badge"/>
-	        </HBox>
-	    </top>
-	
-	    <!-- CONTENT -->
-	    <center>
-	        <StackPane fx:id="contentArea"
-	                   styleClass="content-area"/>
-	    </center>
-	
-	</BorderPane>
+                styleClass="content-root">
 
+        <top>
+            <HBox styleClass="header"
+                  alignment="CENTER_LEFT"
+                  spacing="10">
+
+                <Label fx:id="sectionTitle"
+                       styleClass="header-title"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Label fx:id="modeBadge"
+                       styleClass="mode-badge"/>
+            </HBox>
+        </top>
+
+        <center>
+            <StackPane fx:id="contentArea"
+                       styleClass="content-area"/>
+        </center>
+
+    </BorderPane>
 
 </HBox>
