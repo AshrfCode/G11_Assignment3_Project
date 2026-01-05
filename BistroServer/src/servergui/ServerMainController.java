@@ -35,7 +35,7 @@ public class ServerMainController {
         dbIpField.setText("localhost");
         dbPortField.setText("3306");
         dbUserField.setText("root");
-        dbPassField.setText("Aa123456");
+        dbPassField.setText("Marian123!");
         serverPortField.setText("5555");
 
         ipColumn.setCellValueFactory(new PropertyValueFactory<>("ip"));
@@ -64,7 +64,7 @@ public class ServerMainController {
             int serverPort = Integer.parseInt(serverPortField.getText());
 
             String jdbcUrl = "jdbc:mysql://" + dbIp + ":" + dbPort +
-                    "/Bistro?serverTimezone=Asia/Jerusalem&useSSL=false&allowPublicKeyRetrieval=true";
+                    "/bistro?serverTimezone=Asia/Jerusalem&useSSL=false&allowPublicKeyRetrieval=true";
 
             // 1. Configure DB Pool
             MySQLConnectionPool.configure(jdbcUrl, user, pass);

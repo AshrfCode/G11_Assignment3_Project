@@ -40,6 +40,11 @@
 			        text="Visual Reports"
 			        onAction="#showVisualReports"
 			        styleClass="nav-btn"/>
+		   <Button text="Manage Tables"
+                   fx:id="manageTablesBtn"
+                   onAction="#showManageTables"
+                   styleClass="nav-btn"/>
+			
 		    
 		</VBox>
 

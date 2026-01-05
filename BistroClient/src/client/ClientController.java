@@ -27,55 +27,63 @@ public class ClientController extends AbstractClient {
     @Override
     protected void handleMessageFromServer(Object msg) {
 
-        // ✅ Forward to active screen handler first (before any returns)
+        // ✅ Forward to active screen handler FIRST
         if (ClientSession.activeHandler != null) {
             ClientSession.activeHandler.accept(msg);
         }
 
-        // Simple string messages (status, errors, confirmations)
+        // -------------------------
+        // Simple string messages
+        // -------------------------
         if (msg instanceof String) {
             ui.display((String) msg);
             return;
         }
 
-        // ReservationResponse messages
+        // -------------------------
+        // ReservationResponse
+        // -------------------------
         if (msg instanceof ReservationResponse res) {
             ui.display(res.getMessage());
             return;
         }
 
-        // Lists from server (e.g., orders, reservations, reports)
+        // -------------------------
+        // Lists from server (generic handling only)
+        // -------------------------
         if (msg instanceof List<?>) {
             List<?> list = (List<?>) msg;
-
-            if (!list.isEmpty() && list.get(0) instanceof Order) {
-                @SuppressWarnings("unchecked")
-                List<Order> orders = (List<Order>) list;
-
-                // For now: generic display
-                ui.display("📦 Received " + orders.size() + " orders.");
-                return;
-            }
-
-            // Added support for reservation slots list (List<String>) so it won’t show as “unrecognized”.
-            if (!list.isEmpty() && list.get(0) instanceof String) {
-                @SuppressWarnings("unchecked")
-                List<String> slots = (List<String>) list;
-
-                ui.display("🕒 Available slots: " + String.join(", ", slots));
-                return;
-            }
 
             if (list.isEmpty()) {
                 ui.display("ℹ️ Received an empty list from server.");
                 return;
             }
+
+            if (list.get(0) instanceof Order) {
+                @SuppressWarnings("unchecked")
+                List<Order> orders = (List<Order>) list;
+                ui.display("📦 Received " + orders.size() + " orders.");
+                return;
+            }
+
+            if (list.get(0) instanceof String) {
+                @SuppressWarnings("unchecked")
+                List<String> slots = (List<String>) list;
+                ui.display("🕒 Available slots: " + String.join(", ", slots));
+                return;
+            }
+
+            // ⛔ Tables are handled ONLY by activeHandler (GUI)
+            return;
         }
 
-        // Fallback (debug-safe)
+        // -------------------------
+        // Fallback
+        // -------------------------
         System.err.println("⚠️ Unrecognized message from server: " + msg);
         ui.display("⚠️ Unrecognized message from server.");
     }
+
 
     public void sendRequest(ClientRequest request) {
         try {

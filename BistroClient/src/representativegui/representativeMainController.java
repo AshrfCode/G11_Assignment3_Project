@@ -35,6 +35,23 @@ public class representativeMainController {
         setUsername(username);
         showReservations(); // default page (you can change)
     }
+    
+    @FXML
+    private void showManageTables() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/representativegui/ManageTables.fxml")
+            );
+            javafx.scene.Parent root = loader.load();
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public void setEntryMode(EntryMode mode) {
         this.entryMode = mode;

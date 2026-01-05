@@ -1,0 +1,90 @@
+/* =========================
+   ROOT
+========================= */
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: #FFFFFF;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+.sidebar {
+    -fx-background-color: #425B58;
+    -fx-padding: 24;
+    -fx-spacing: 20;
+}
+
+/* Bistro logo */
+.logo {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+/* Navigation buttons */
+.nav-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 14px;
+    -fx-padding: 10 14;
+    -fx-alignment: CENTER_LEFT;
+    -fx-background-radius: 8;
+}
+
+.nav-btn:hover {
+    -fx-background-color: #A1C0BB;
+    -fx-text-fill: #425B58;
+}
+
+/* =========================
+   BACK BUTTON
+========================= */
+.back-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 13px;
+    -fx-padding: 8 12;
+}
+
+.back-btn:hover {
+    -fx-text-fill: #FFC3A1;
+}
+
+/* =========================
+   HEADER
+========================= */
+.header {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #A1C0BB;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 16 24;
+}
+
+.header-title {
+    -fx-text-fill: #425B58;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+/* Mode badge */
+.mode-badge {
+    -fx-background-color: #FFC3A1;
+    -fx-text-fill: #425B58;
+    -fx-padding: 6 12;
+    -fx-background-radius: 12;
+    -fx-font-size: 12px;
+}
+
+/* =========================
+   CONTENT AREA
+========================= */
+.content-area {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 32;
+}
+
+.placeholder-text {
+    -fx-text-fill: #425B58;
+    -fx-font-size: 14px;
+}
