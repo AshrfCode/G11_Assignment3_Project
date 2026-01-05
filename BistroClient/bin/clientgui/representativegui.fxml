@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="representativegui.ManageTablesController"
+      spacing="10"
+      alignment="CENTER"
+      prefWidth="600"
+      prefHeight="500">
+
+    <TableView fx:id="tablesTable" prefHeight="250">
+        <columns>
+            <TableColumn fx:id="colNumber" text="Table #" />
+            <TableColumn fx:id="colCapacity" text="Capacity" />
+            <TableColumn fx:id="colStatus" text="Status" />
+        </columns>
+    </TableView>
+
+    <TextField fx:id="numberField" promptText="Table Number"/>
+    <TextField fx:id="capacityField" promptText="Capacity"/>
+
+    <ComboBox fx:id="statusCombo"/>
+
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Add" onAction="#addTable"/>
+        <Button text="Update" onAction="#updateTable"/>
+        <Button text="Delete" onAction="#deleteTable"/>
+    </HBox>
+
+</VBox>

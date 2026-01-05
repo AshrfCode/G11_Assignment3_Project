@@ -1,0 +1,191 @@
+/* =========================
+   GLOBAL
+   ========================= */
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+/* =========================
+   LEFT BRAND PANEL
+   ========================= */
+.left-pane {
+    -fx-background-color: #425B58;
+    -fx-padding: 0;
+}
+
+.left-content {
+    -fx-padding: 60;
+}
+
+
+.brand-title {
+    -fx-font-size: 42px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #FFFFFF;
+}
+
+.brand-subtitle {
+    -fx-font-size: 18px;
+    -fx-text-fill: #FFC3A1; /* accent highlight */
+}
+
+.brand-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #FFFFFF;
+    -fx-opacity: 0.9;
+    -fx-line-spacing: 4;
+}
+
+/* =========================
+   RIGHT PANEL (FORM)
+   ========================= */
+.right-pane {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 42;
+}
+
+/* =========================
+   TITLES
+   ========================= */
+.form-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #425B58;
+}
+
+/* =========================
+   INPUTS
+   ========================= */
+.input,
+.input-small {
+    -fx-pref-width: 320;
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #A1C0BB;
+    -fx-border-width: 1.4;
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+    -fx-padding: 10 14;
+    -fx-font-size: 14px;
+}
+
+.input-small {
+    -fx-pref-width: 300;
+}
+
+.input:focused,
+.input-small:focused {
+    -fx-border-color: #425B58;
+}
+
+/* =========================
+   TOGGLES (HOME / RESTAURANT)
+   ========================= */
+.toggle {
+    -fx-pref-width: 150;
+    -fx-background-color: #A1C0BB;
+    -fx-text-fill: #425B58;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-padding: 9 0;
+}
+
+.toggle:selected {
+    -fx-background-color: #425B58;
+    -fx-text-fill: #FFFFFF;
+}
+
+/* =========================
+   PRIMARY ACTION (LOGIN)
+   ========================= */
+.primary-btn {
+    -fx-pref-width: 320;
+    -fx-background-color: #425B58;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 15;
+    -fx-padding: 12 0;
+}
+
+.primary-btn:hover {
+    -fx-background-color: #3A504D; /* slightly darker shade of same vibe */
+}
+
+/* =========================
+   SECONDARY ACTION (QUICK ACCESS)
+   ========================= */
+.secondary-btn {
+    -fx-pref-width: 300;
+    -fx-background-color: #FFC3A1;
+    -fx-text-fill: #425B58;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-padding: 10 0;
+}
+
+.secondary-btn:hover {
+    -fx-background-color: #FFB894; /* small hover shift, same palette family */
+}
+
+/* =========================
+   GUEST ACCESS
+   ========================= */
+.guest-text {
+    -fx-text-fill: #425B58;
+    -fx-font-size: 13px;
+    -fx-opacity: 0.9;
+}
+
+.guest-btn {
+    -fx-pref-width: 200;
+    -fx-background-color: transparent;
+    -fx-border-color: #A1C0BB;
+    -fx-border-width: 1.4;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-text-fill: #425B58;
+    -fx-font-weight: bold;
+    -fx-padding: 8 0;
+}
+
+.guest-btn:hover {
+    -fx-background-color: #A1C0BB;
+    -fx-text-fill: #425B58;
+}
+
+/* =========================
+   INFO / STATUS
+   ========================= */
+.info-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #425B58;
+    -fx-opacity: 0.85;
+}
+
+.status-text {
+    -fx-font-size: 13px;
+    -fx-text-fill: #ee3f3f;
+    -fx-font-weight: bold;
+}
+
+.tag-reader{
+	-fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #425B58;
+}
+
+.header-btn-danger {
+    -fx-background-color: #ff8178;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-background-radius: 10;
+	-fx-cursor: pointer;
+    /* visual offset only — does NOT affect layout */
+    -fx-translate-x: 50;
+    -fx-translate-y: -30;
+}
+
+.header-btn-danger:hover {
+	-fx-background-color: #ff5145
+}
+
