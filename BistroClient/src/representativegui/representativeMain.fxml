@@ -27,7 +27,10 @@
 		    <Button text="Manage Orders"
 		            onAction="#showReservations"
 		            styleClass="nav-btn"/>
-		
+		     <Button text="Manage Opening Hours"
+                    onAction="#showOpeningHoursManagement"
+                    styleClass="nav-btn"/>
+
 		    <Button text="Create Subscriber"
 		            onAction="#showCreateSubscriber"
 		            styleClass="nav-btn"/>
@@ -40,10 +43,12 @@
 			        text="Visual Reports"
 			        onAction="#showVisualReports"
 			        styleClass="nav-btn"/>
+			        
 		   <Button text="Manage Tables"
                    fx:id="manageTablesBtn"
                    onAction="#showManageTables"
                    styleClass="nav-btn"/>
+                   
 			
 		    
 		</VBox>

@@ -299,6 +299,216 @@ public class DBController {
 
         return result;
     }
+    
+ // ------------------------------------------------------------
+ // SPECIAL OPENING HOURS
+ // ------------------------------------------------------------
+
+ public String getSpecialOpeningByDate(String dateYYYYMMDD) {
+     String sql = "SELECT special_date, open_time, close_time, is_closed " +
+                  "FROM special_opening_hours WHERE special_date = ?";
+
+     PooledConnection pConn = null;
+
+     try {
+         pConn = pool.getConnection();
+         Connection conn = pConn.getConnection();
+
+         try (PreparedStatement ps = conn.prepareStatement(sql)) {
+             ps.setString(1, dateYYYYMMDD);
+
+             try (ResultSet rs = ps.executeQuery()) {
+                 if (!rs.next()) {
+                     return "No special opening set for " + dateYYYYMMDD;
+                 }
+
+                 boolean closed = rs.getBoolean("is_closed");
+                 Time open = rs.getTime("open_time");
+                 Time close = rs.getTime("close_time");
+
+                 if (closed) return dateYYYYMMDD + " : CLOSED";
+
+                 return dateYYYYMMDD + " : " + open + " - " + close;
+             }
+         }
+
+     } catch (Exception e) {
+         e.printStackTrace();
+         return "ERROR: " + e.getMessage();
+
+     } finally {
+         pool.releaseConnection(pConn);
+     }
+ }
+
+ public boolean upsertSpecialOpening(String dateYYYYMMDD, String openTime, String closeTime, boolean isClosed) {
+     String sql =
+         "INSERT INTO special_opening_hours (special_date, open_time, close_time, is_closed) " +
+         "VALUES (?, ?, ?, ?) " +
+         "ON DUPLICATE KEY UPDATE " +
+         "open_time = VALUES(open_time), " +
+         "close_time = VALUES(close_time), " +
+         "is_closed = VALUES(is_closed)";
+
+     PooledConnection pConn = null;
+
+     try {
+         pConn = pool.getConnection();
+         Connection conn = pConn.getConnection();
+
+         try (PreparedStatement ps = conn.prepareStatement(sql)) {
+             ps.setString(1, dateYYYYMMDD);
+
+             if (isClosed || openTime == null || openTime.isBlank()) {
+                 ps.setNull(2, Types.TIME);
+             } else {
+                 ps.setTime(2, Time.valueOf(openTime + ":00"));
+             }
+
+             if (isClosed || closeTime == null || closeTime.isBlank()) {
+                 ps.setNull(3, Types.TIME);
+             } else {
+                 ps.setTime(3, Time.valueOf(closeTime + ":00"));
+             }
+
+             ps.setBoolean(4, isClosed);
+
+             return ps.executeUpdate() > 0;
+         }
+
+     } catch (Exception e) {
+         e.printStackTrace();
+         return false;
+
+     } finally {
+         pool.releaseConnection(pConn);
+     }
+ }
+
+ public boolean deleteSpecialOpening(String dateYYYYMMDD) {
+	    String sql = "DELETE FROM special_opening_hours WHERE special_date = ?";
+
+	    PooledConnection pConn = null;
+	    try {
+	        pConn = pool.getConnection();
+	        Connection conn = pConn.getConnection();
+
+	        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+	            ps.setString(1, dateYYYYMMDD);
+	            return ps.executeUpdate() > 0;
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return false;
+	    } finally {
+	        if (pConn != null) pool.releaseConnection(pConn);
+	    }
+	}
+
+
+ // ===========================
+ // Regular Opening Hours (Weekly)
+ // ===========================
+
+ public List<String> getOpeningHours() {
+     List<String> result = new ArrayList<>();
+
+     // אנחנו משתמשים בטבלה RestaurantHours: day_of_week, open_time, close_time
+     // day_of_week: 1=Mon ... 7=Sun
+     String sql = "SELECT day, open_time, close_time FROM opening_hours ORDER BY FIELD(day,'SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY')";
+
+
+     PooledConnection pConn = null;
+     try {
+         pConn = pool.getConnection();
+         Connection conn = pConn.getConnection();
+
+         try (PreparedStatement ps = conn.prepareStatement(sql);
+              ResultSet rs = ps.executeQuery()) {
+
+             // אם אין כלום בטבלה – נחזיר ברירות מחדל לכל הימים
+             boolean any = false;
+
+             while (rs.next()) {
+                 any = true;
+                 Time open = rs.getTime("open_time");
+                 Time close = rs.getTime("close_time");
+
+                 String dayName = rs.getString("day");
+                 String openStr = (open == null) ? "--:--" : open.toLocalTime().toString();
+                 String closeStr = (close == null) ? "--:--" : close.toLocalTime().toString();
+
+                 result.add(dayName + " | " + openStr + " - " + closeStr);
+             }
+
+             if (!any) {
+                 // default 10:00-22:00 לכל הימים
+                 for (int d = 1; d <= 7; d++) {
+                     result.add(dayIntToName(d) + " | 10:00 - 22:00");
+                 }
+             }
+         }
+
+     } catch (Exception e) {
+         e.printStackTrace();
+         result.clear();
+         result.add("❌ DB error: " + e.getMessage());
+     } finally {
+         if (pConn != null) pool.releaseConnection(pConn);
+     }
+
+     return result;
+ }
+
+ public boolean updateOpeningHours(String day, String openTime, String closeTime) {
+	    String sql =
+	        "INSERT INTO opening_hours (day, open_time, close_time) " +
+	        "VALUES (?, ?, ?) " +
+	        "ON DUPLICATE KEY UPDATE open_time=VALUES(open_time), close_time=VALUES(close_time)";
+
+	    try (Connection conn = pool.getConnection().getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setString(1, day);                     // SUNDAY
+	        ps.setTime(2, Time.valueOf(openTime));   // 10:00
+	        ps.setTime(3, Time.valueOf(closeTime));  // 22:00
+
+	        return ps.executeUpdate() > 0;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+
+
+ private int dayNameToInt(String dayName) {
+     // תומך גם באנגלית וגם אם מגיע "SUNDAY" וכו'
+     String d = dayName.trim().toUpperCase();
+     return switch (d) {
+         case "MONDAY" -> 1;
+         case "TUESDAY" -> 2;
+         case "WEDNESDAY" -> 3;
+         case "THURSDAY" -> 4;
+         case "FRIDAY" -> 5;
+         case "SATURDAY" -> 6;
+         case "SUNDAY" -> 7;
+         default -> 7;
+     };
+ }
+
+ private String dayIntToName(int day) {
+     return switch (day) {
+         case 1 -> "MONDAY";
+         case 2 -> "TUESDAY";
+         case 3 -> "WEDNESDAY";
+         case 4 -> "THURSDAY";
+         case 5 -> "FRIDAY";
+         case 6 -> "SATURDAY";
+         case 7 -> "SUNDAY";
+         default -> "SUNDAY";
+     };
+ }
+
 
 
    

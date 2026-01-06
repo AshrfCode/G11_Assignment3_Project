@@ -129,6 +129,47 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(list);
                         break;
                     }
+                    
+                    case ClientRequest.CMD_GET_OPENING_HOURS: {
+                        client.sendToClient(db.getOpeningHours());
+                        break;
+                    }
+
+                    case ClientRequest.CMD_UPDATE_OPENING_HOURS: {
+                        // params: day, openTime, closeTime
+                        String day = params[0].toString();        // "SUNDAY" וכו'
+                        String open = params[1].toString();       // "10:00"
+                        String close = params[2].toString();      // "22:00"
+                        boolean ok = db.updateOpeningHours(day, open, close);
+                        client.sendToClient(ok ? "OPENING_UPDATED" : "OPENING_UPDATE_FAIL");
+                        break;
+                    }
+
+                    case ClientRequest.CMD_GET_SPECIAL_OPENING: {
+                        // params: date "YYYY-MM-DD"
+                        String date = params[0].toString();
+                        client.sendToClient(db.getSpecialOpeningByDate(date));
+                        break;
+                    }
+
+                    case ClientRequest.CMD_UPSERT_SPECIAL_OPENING: {
+                        // params: date, openTime, closeTime, isClosed
+                        String date = params[0].toString();
+                        String open = (params[1] == null) ? null : params[1].toString();   // יכול להיות null אם סגור
+                        String close = (params[2] == null) ? null : params[2].toString();
+                        boolean isClosed = Boolean.parseBoolean(params[3].toString());
+                        boolean ok = db.upsertSpecialOpening(date, open, close, isClosed);
+                        client.sendToClient(ok ? "SPECIAL_OPENING_SAVED" : "SPECIAL_OPENING_SAVE_FAIL");
+                        break;
+                    }
+
+                    case ClientRequest.CMD_DELETE_SPECIAL_OPENING: {
+                        String date = params[0].toString();
+                        boolean ok = db.deleteSpecialOpening(date);
+                        client.sendToClient(ok ? "SPECIAL_OPENING_DELETED" : "SPECIAL_OPENING_DELETE_FAIL");
+                        break;
+                    }
+
 
                     // =========================
                     // TABLES
