@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import common.UserRole;
 import entities.User;
@@ -16,18 +18,19 @@ public class MySQLUserDAO {
 
     private final MySQLConnectionPool pool = MySQLConnectionPool.getInstance();
 
+    // =================================================
+    // LOGIN
+    // =================================================
+
     public User authenticate(String email, String password) throws SQLException {
-    	
+
         PooledConnection pConn = null;
-        Connection conn = null;
 
         try {
-            // 1️⃣ Get connection from pool
             pConn = pool.getConnection();
             pConn.touch();
-            conn = pConn.getConnection();
+            Connection conn = pConn.getConnection();
 
-            // 2️⃣ Query base user
             String userSql = """
                 SELECT *
                 FROM users
@@ -42,38 +45,71 @@ public class MySQLUserDAO {
                 ResultSet rs = stmt.executeQuery();
 
                 if (!rs.next()) {
-                    return null; // login failed
+                    return null;
                 }
 
-                User user = new User(
-                    rs.getInt("id"),
-                    rs.getString("name"),
-                    rs.getString("email"),
-                    rs.getString("phone"),
-                    rs.getString("password"),
-                    UserRole.valueOf(rs.getString("role")),
-                    rs.getBoolean("is_active"),
-                    rs.getTimestamp("created_at")
-                );
+                User baseUser = mapUser(rs);
 
-                // 3️⃣ Load role-specific data
-                return switch (user.getRole()) {
-
-                    case SUBSCRIBER -> loadSubscriber(conn, user);
-
-                    case REPRESENTATIVE -> loadRepresentative(conn, user);
-
-                    case MANAGER -> loadRepresentative(conn, user);
+                return switch (baseUser.getRole()) {
+                    case SUBSCRIBER -> loadSubscriber(conn, baseUser);
+                    case REPRESENTATIVE, MANAGER -> loadRepresentative(conn, baseUser);
                 };
             }
 
         } finally {
-            // 4️⃣ Always release connection back to pool
             pool.releaseConnection(pConn);
         }
     }
 
-    // ----------------------------------------------------
+    // =================================================
+    // GET ALL SUBSCRIBERS (FOR TABLE VIEW)
+    // =================================================
+
+    public List<User> getAllSubscribers() throws SQLException {
+
+        List<User> list = new ArrayList<>();
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            String sql = "SELECT * FROM users WHERE role = 'SUBSCRIBER'";
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    list.add(mapUser(rs));
+                }
+            }
+            return list;
+
+        } finally {
+            pool.releaseConnection(pConn);
+        }
+    }
+
+    // =================================================
+    // MAPPERS
+    // =================================================
+
+    private User mapUser(ResultSet rs) throws SQLException {
+        return new User(
+            rs.getInt("id"),
+            rs.getString("name"),
+            rs.getString("email"),
+            rs.getString("phone"),
+            rs.getString("password"),
+            UserRole.valueOf(rs.getString("role")),
+            rs.getBoolean("is_active"),
+            rs.getTimestamp("created_at")
+        );
+    }
+
+    // =================================================
+    // ROLE-SPECIFIC LOADERS
+    // =================================================
 
     private Subscriber loadSubscriber(Connection conn, User user) throws SQLException {
 
@@ -84,6 +120,7 @@ public class MySQLUserDAO {
         """;
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+
             stmt.setInt(1, user.getId());
             ResultSet rs = stmt.executeQuery();
 
@@ -98,6 +135,29 @@ public class MySQLUserDAO {
             );
         }
     }
+    
+    public void addSubscriber(String name, String email, String phone,
+            String password, boolean active) throws SQLException {
+
+String sql = """
+INSERT INTO users
+(name, email, phone, password, role, is_active)
+VALUES (?, ?, ?, ?, 'SUBSCRIBER', ?)
+""";
+
+try (Connection conn = pool.getConnection().getConnection();
+PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+stmt.setString(1, name);
+stmt.setString(2, email);
+stmt.setString(3, phone);
+stmt.setString(4, password);
+stmt.setBoolean(5, active);
+
+stmt.executeUpdate();
+}
+}
+
 
     private Representative loadRepresentative(Connection conn, User user) throws SQLException {
 
@@ -108,6 +168,7 @@ public class MySQLUserDAO {
         """;
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+
             stmt.setInt(1, user.getId());
             ResultSet rs = stmt.executeQuery();
 
@@ -121,5 +182,4 @@ public class MySQLUserDAO {
             );
         }
     }
-    
 }

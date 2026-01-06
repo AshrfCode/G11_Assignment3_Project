@@ -35,6 +35,10 @@
 		            onAction="#showCreateSubscriber"
 		            styleClass="nav-btn"/>
 		
+		   <Button text="Manage Subscribers"
+                   onAction="#showManageSubscribers"
+                   styleClass="nav-btn"/>
+		
 		    <Button text="Reports"
 		            onAction="#showReports"
 		            styleClass="nav-btn"/>

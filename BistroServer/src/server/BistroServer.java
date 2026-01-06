@@ -201,6 +201,31 @@ public class BistroServer extends AbstractServer {
                         tableDAO.deleteTable(tableNumber);
                         client.sendToClient("✅ Table deleted");
                         client.sendToClient(tableDAO.getAllTables());
+                    }
+                    
+                    case "ADD_SUBSCRIBER": {
+
+                        if (!isRepresentative(client)) {
+                            client.sendToClient("❌ Unauthorized");
+                            break;
+                        }
+
+                        try {
+                            String name = params[0].toString();
+                            String email = params[1].toString();
+                            String phone = params[2].toString();
+                            String password = params[3].toString();
+                            boolean active = (boolean) params[4];
+
+                            MySQLUserDAO userDAO = new MySQLUserDAO();
+                            userDAO.addSubscriber(name, email, phone, password, active);
+
+                            client.sendToClient("✅ Subscriber added");
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            client.sendToClient("❌ Failed to add subscriber");
+                        }
                         break;
                     }
 
@@ -215,6 +240,24 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(
                                 db.getAvailableReservationSlots(dateStr, diners)
                         );
+                        break;
+                    }
+                    case ClientRequest.CMD_GET_ALL_SUBSCRIBERS: {
+
+                        // 🔐 Authorization: REPRESENTATIVE only
+                        if (!isRepresentative(client)) {
+                            client.sendToClient("❌ Unauthorized: Representative only");
+                            break;
+                        }
+
+                        try {
+                            MySQLUserDAO userDAO = new MySQLUserDAO();
+                            List<User> subscribers = userDAO.getAllSubscribers();
+                            client.sendToClient(subscribers);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            client.sendToClient("❌ Error loading subscribers");
+                        }
                         break;
                     }
 

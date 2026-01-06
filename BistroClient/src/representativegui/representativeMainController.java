@@ -1,39 +1,27 @@
 package representativegui;
 
-import common.UserRole;
+import java.time.LocalDate;
 import java.util.List;
-
+import common.UserRole;
 import client.ClientController;
 import client.ClientSession;
 import common.ClientRequest;
-
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.layout.StackPane;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import java.time.LocalDate;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.DatePicker;
-
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.layout.StackPane;
-import client.ClientController;
+import javafx.scene.layout.VBox;
 
 
 public class representativeMainController {
@@ -49,7 +37,7 @@ public class representativeMainController {
         HOME,
         RESTAURANT
     }
-    
+
     private UserRole role = UserRole.REPRESENTATIVE;
 
     @FXML private Label sectionTitle;
@@ -61,74 +49,43 @@ public class representativeMainController {
     @FXML private Button waitingListBtn;
     @FXML private Button reportsBtn;
 
-
     private EntryMode entryMode = EntryMode.HOME;
     private String username = "Subscriber";
+
+    // =========================
+    // INITIALIZE
+    // =========================
 
     @FXML
     public void initialize() {
         applyModeUI();
         applyRoleUI();
         setUsername(username);
-        showReservations(); // default page (you can change)
+        showReservations(); // default page
     }
-    
+
+    // =========================
+    // NAVIGATION – LOAD INTO contentArea
+    // =========================
+
+    @FXML
+    private void showManageSubscribers() {
+        loadContent("/representativegui/ManageSubscribers.fxml",
+                "Manage Subscribers");
+    }
+
     @FXML
     private void showManageTables() {
-        try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-                    getClass().getResource("/representativegui/ManageTables.fxml")
-            );
-            javafx.scene.Parent root = loader.load();
-
-            contentArea.getChildren().clear();
-            contentArea.getChildren().add(root);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        loadContent("/representativegui/ManageTables.fxml",
+                "Manage Tables");
     }
 
 
-    public void setEntryMode(EntryMode mode) {
-        this.entryMode = mode;
-        applyModeUI();
-    }
-
-    public void setUsername(String username) {
-        if (username != null && !username.trim().isEmpty()) {
-            this.username = username.trim();
-        }
-        heyUserLabel.setText("Hey " + this.username);
-    }
-    
-    public void setRole(UserRole role) {
-        if (role != null) {
-            this.role = role;
-        }
-        applyRoleUI();
-        applyModeUI();
-    }
-
-
-    private void applyModeUI() {
-        boolean isRestaurant = (entryMode == EntryMode.RESTAURANT);
-
-        String modeText = isRestaurant ? "Restaurant Mode" : "Home Mode";
-        String roleText = (role != null) ? role.name() : "UNKNOWN";
-
-        if (modeBadge != null) {
-            modeBadge.setText(roleText + " | " + modeText);
-        }
-
-        if (waitingListBtn != null) {
-            waitingListBtn.setVisible(isRestaurant);
-            waitingListBtn.setManaged(isRestaurant);
-        }
-    }
     
     
     // ---------------- NAV ACTIONS ----------------
+
+
     @FXML
     private void showReservations() {
         setSection("Today's Reservations");
@@ -465,36 +422,34 @@ public class representativeMainController {
         setSection("Reports");
         setPlaceholder("View restaurant activity reports.");
     }
-    
+
     @FXML
     private void showVisualReports() {
-        setSection("Visual");
+        setSection("Visual Reports");
         setPlaceholder("View visual restaurant activity reports.");
     }
 
     @FXML
     private void showCreateSubscriber() {
         setSection("Create Subscriber");
-        setPlaceholder("Register a new subscriber and generate a subscription number.");
+        setPlaceholder("Register a new subscriber.");
     }
 
-
-    // ---------------- LOGOUT ----------------
+    // =========================
+    // LOGOUT
+    // =========================
 
     @FXML
     private void handleLogout() {
-        // for now: just go back to sign-in (same stage)
-        // later you can also clear session/user data here
         try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+            FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/clientgui/BistroMain.fxml")
             );
-            javafx.scene.Parent root = loader.load();
+            Parent root = loader.load();
 
-            javafx.stage.Stage stage = (javafx.stage.Stage) contentArea.getScene().getWindow();
-            javafx.scene.Scene scene = new javafx.scene.Scene(root, 1000, 700);
-            stage.setScene(scene);
-
+            javafx.stage.Stage stage =
+                    (javafx.stage.Stage) contentArea.getScene().getWindow();
+            stage.setScene(new javafx.scene.Scene(root, 1000, 700));
             stage.centerOnScreen();
             stage.setMinWidth(900);
             stage.setMinHeight(600);
@@ -505,11 +460,37 @@ public class representativeMainController {
         }
     }
 
-    // ---------------- HELPERS ----------------
+    // =========================
+    // HELPERS
+    // =========================
+
+    private void loadContent(String fxmlPath, String title) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Parent root = loader.load();
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+            setSection(title);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     private void setSection(String title) {
-        if (sectionTitle != null) sectionTitle.setText(title);
+        if (sectionTitle != null) {
+            sectionTitle.setText(title);
+        }
     }
+    
+    public void setEntryMode(EntryMode mode) {
+        if (mode != null) {
+            this.entryMode = mode;
+        }
+        applyModeUI();
+    }
+
 
     private void setPlaceholder(String text) {
         contentArea.getChildren().clear();
@@ -517,7 +498,38 @@ public class representativeMainController {
         lbl.getStyleClass().add("placeholder-text");
         contentArea.getChildren().add(lbl);
     }
-    
+
+    public void setUsername(String username) {
+        if (username != null && !username.trim().isEmpty()) {
+            this.username = username.trim();
+        }
+        heyUserLabel.setText("Hey " + this.username);
+    }
+
+    public void setRole(UserRole role) {
+        if (role != null) {
+            this.role = role;
+        }
+        applyRoleUI();
+        applyModeUI();
+    }
+
+    private void applyModeUI() {
+        boolean isRestaurant = (entryMode == EntryMode.RESTAURANT);
+
+        String roleText = (role != null) ? role.name() : "UNKNOWN";
+        String modeText = isRestaurant ? "Restaurant Mode" : "Home Mode";
+
+        if (modeBadge != null) {
+            modeBadge.setText(roleText + " | " + modeText);
+        }
+
+        if (waitingListBtn != null) {
+            waitingListBtn.setVisible(isRestaurant);
+            waitingListBtn.setManaged(isRestaurant);
+        }
+    }
+
     private void applyRoleUI() {
         boolean isManager = (role == UserRole.MANAGER);
 
@@ -526,5 +538,4 @@ public class representativeMainController {
             reportsBtn.setManaged(isManager);
         }
     }
-
 }

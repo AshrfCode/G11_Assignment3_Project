@@ -1,0 +1,26 @@
+/* ===== TABLE BACKGROUND (NUDE) ===== */
+.table-view {
+    -fx-background-color: #FDF6EE;
+}
+
+.table-row-cell {
+    -fx-background-color: #FDF6EE;
+}
+
+.table-row-cell:filled:selected {
+    -fx-background-color: #FAD7A0;
+}
+
+/* ===== ORANGE BUTTON ===== */
+.orange-button {
+    -fx-background-color: #E67E22;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 18;
+    -fx-background-radius: 14;
+    -fx-cursor: hand;
+}
+
+.orange-button:hover {
+    -fx-background-color: #D35400;
+}
