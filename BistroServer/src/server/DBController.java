@@ -26,39 +26,48 @@ public class DBController {
     // ------------------------------------------------------------
     // GET ALL ORDERS
     // ------------------------------------------------------------
-    public List<Order> getAllOrders() {
-        List<Order> orders = new ArrayList<>();
-        String sql = "SELECT * FROM `Order`";
+    public List<String> getAllOrders() {
+        List<String> result = new ArrayList<>();
+
+        String sql =
+            "SELECT id, reserve_date, reserve_time, dinners_number, reservation_code, reservation_status, table_number, subscriber_number " +
+            "FROM reservations " +
+            "ORDER BY reserve_date DESC, reserve_time DESC";
 
         PooledConnection pConn = null;
 
         try {
             pConn = pool.getConnection();
-            pConn.touch();
             Connection conn = pConn.getConnection();
 
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(sql)) {
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
 
                 while (rs.next()) {
-                    orders.add(new Order(
-                            rs.getInt("order_number"),
-                            rs.getDate("order_date"),
-                            rs.getInt("number_of_guests"),
-                            rs.getInt("confirmation_code"),
-                            rs.getInt("subscriber_id"),
-                            rs.getDate("date_of_placing_order")
-                    ));
+                    result.add(
+                        "#" + rs.getInt("id") +
+                        " | " + rs.getDate("reserve_date") +
+                        " " + rs.getTime("reserve_time") +
+                        " | diners=" + rs.getInt("dinners_number") +
+                        " | code=" + rs.getString("reservation_code") +
+                        " | status=" + rs.getString("reservation_status") +
+                        " | table=" + rs.getInt("table_number") +
+                        " | sub=" + rs.getString("subscriber_number")
+                    );
                 }
             }
+
         } catch (Exception e) {
             e.printStackTrace();
+            result.clear();
+            result.add("❌ DB error: " + e.getMessage());
         } finally {
-            pool.releaseConnection(pConn);
+            if (pConn != null) pool.releaseConnection(pConn);
         }
 
-        return orders;
+        return result;
     }
+
 
     // ------------------------------------------------------------
     // UPDATE ORDER DATE
@@ -246,6 +255,51 @@ public class DBController {
 
         return null;
     }
+    
+    public List<String> getTodayReservations() {
+        List<String> result = new ArrayList<>();
+
+        String sql =
+            "SELECT id, reserve_date, reserve_time, dinners_number, reservation_code, reservation_status, table_number, subscriber_number " +
+            "FROM reservations " +
+            "WHERE reserve_date = CURDATE() AND reservation_status='ACTIVE' " +
+            "ORDER BY reserve_time";
+
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+                    result.add(
+                        "#" + rs.getInt("id") +
+                        " | " + rs.getDate("reserve_date") +
+                        " " + rs.getTime("reserve_time") +
+                        " | diners=" + rs.getInt("dinners_number") +
+                        " | code=" + rs.getString("reservation_code") +
+                        " | table=" + rs.getInt("table_number") +
+                        " | sub=" + rs.getString("subscriber_number")
+                    );
+                }
+            }
+
+            if (result.isEmpty()) result.add("No reservations for today ✅");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.clear();
+            result.add("❌ DB error: " + e.getMessage());
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+
+        return result;
+    }
+
 
    
  // ------------------------------------------------------------

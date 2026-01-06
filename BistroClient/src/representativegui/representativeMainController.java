@@ -126,12 +126,44 @@ public class representativeMainController {
     
     
     // ---------------- NAV ACTIONS ----------------
-
     @FXML
     private void showReservations() {
         setSection("Today's Reservations");
-        setPlaceholder("View and manage today's reservations.");
+
+        if (client == null) {
+            setPlaceholder("❌ No server connection (client is null).");
+            return;
+        }
+
+        setPlaceholder("Loading today's reservations...");
+
+        ListView<String> listView = new ListView<>();
+        contentArea.getChildren().setAll(listView);
+
+        ClientSession.activeHandler = (msg) -> {
+            if (msg instanceof List<?> list) {
+                Platform.runLater(() -> {
+                    listView.getItems().clear();
+
+                    if (list.isEmpty()) {
+                        listView.getItems().add("No reservations for today ✅");
+                        return;
+                    }
+
+                    if (list.get(0) instanceof String) {
+                        @SuppressWarnings("unchecked")
+                        List<String> items = (List<String>) list;
+                        listView.getItems().addAll(items);
+                    } else {
+                        listView.getItems().add("⚠️ Unexpected data from server.");
+                    }
+                });
+            }
+        };
+
+        client.sendRequest(new ClientRequest(ClientRequest.CMD_GET_TODAY_RESERVATIONS, new Object[]{}));
     }
+
     @FXML
     private void showWaitingList() {
         setSection("Waiting List");

@@ -25,7 +25,7 @@
 		            styleClass="nav-btn"/>
 		
 		    <Button text="Manage Orders"
-		            onAction="#showOrders"
+		            onAction="#showReservations"
 		            styleClass="nav-btn"/>
 		
 		    <Button text="Create Subscriber"

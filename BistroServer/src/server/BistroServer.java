@@ -1,6 +1,7 @@
 package server;
 
 import java.io.IOException;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,10 +91,6 @@ public class BistroServer extends AbstractServer {
 
                 switch (command) {
 
-                    case "GET_ALL_ORDERS":
-                        List<Order> orders = db.getAllOrders();
-                        client.sendToClient(orders);
-                        break;
 
                     case "UPDATE_ORDER_DATE": {
                         int orderId = Integer.parseInt(params[0].toString());
@@ -103,6 +100,18 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(ok ? "OK_DATE" : "ERROR_DATE");
                         break;
                     }
+                    case ClientRequest.CMD_GET_TODAY_RESERVATIONS: {
+                        var list = db.getTodayReservations();
+                        client.sendToClient(list);
+                        break;
+                    }
+
+                    case "GET_ALL_ORDERS": {
+                        List<String> orders = db.getAllOrders();
+                        client.sendToClient(orders);
+                        break;
+                    }
+
 
                     case "UPDATE_NUMBER_OF_GUESTS": {
                         int orderId = Integer.parseInt(params[0].toString());
@@ -112,7 +121,7 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(ok ? "OK_GUESTS" : "ERROR_GUESTS");
                         break;
                     }
-                 // =========================
+                     // =========================
                     // WAITING LIST
                     // =========================
                     case ClientRequest.CMD_GET_WAITING_LIST: {
