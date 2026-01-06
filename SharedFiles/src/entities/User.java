@@ -15,7 +15,7 @@ public class User implements Serializable {
     private String phone;
     private String password;
     private UserRole role;
-    private boolean isActive;
+    private boolean active;
     private Timestamp createdAt;
 
     // Empty constructor (required)
@@ -30,7 +30,7 @@ public class User implements Serializable {
         this.phone = phone;
         this.password = password;
         this.role = role;
-        this.isActive = true;
+        this.active = true;
     }
 
     // Full constructor (for DB fetch)
@@ -43,7 +43,7 @@ public class User implements Serializable {
         this.phone = phone;
         this.password = password;
         this.role = role;
-        this.isActive = isActive;
+        this.active = isActive;
         this.createdAt = createdAt;
     }
 
@@ -99,11 +99,16 @@ public class User implements Serializable {
     }
 
     public boolean isActive() {
-        return isActive;
+        return active;
+    }
+    
+    public Boolean getActive() {
+        return active;
     }
 
+
     public void setActive(boolean active) {
-        isActive = active;
+        active = active;
     }
 
     public Timestamp getCreatedAt() {

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="representativegui.AddSubscriberController"
+      spacing="10">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <TextField fx:id="nameField" promptText="Name"/>
+    <TextField fx:id="emailField" promptText="Email"/>
+    <TextField fx:id="phoneField" promptText="Phone"/>
+    <PasswordField fx:id="passwordField" promptText="Password"/>
+
+    <CheckBox fx:id="activeCheck" text="Active" selected="true"/>
+
+    <HBox spacing="10">
+        <Button text="Save" onAction="#saveSubscriber"/>
+        <Button text="Cancel" onAction="#close"/>
+    </HBox>
+
+    <Label fx:id="msgLabel"/>
+
+</VBox>
