@@ -22,6 +22,7 @@ public class DBController {
 
     private final MySQLConnectionPool pool = MySQLConnectionPool.getInstance();
 
+    
     // ------------------------------------------------------------
     // GET ALL ORDERS
     // ------------------------------------------------------------
@@ -368,6 +369,40 @@ public class DBController {
         } finally {
             pool.releaseConnection(pConn);
         }
+    }
+    
+    
+
+    public List<String> getWaitingList() {
+        List<String> result = new ArrayList<>();
+
+        String sql =
+            "SELECT wl.id, wl.request_time, wl.subscriber_number, u.name, u.phone " +
+            "FROM waiting_list wl " +
+            "JOIN subscribers s ON wl.subscriber_number = s.subscriber_number " +
+            "JOIN users u ON s.user_id = u.id " +
+            "ORDER BY wl.request_time";
+
+        try (Connection conn = pool.getConnection().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                result.add(
+                    "#" + rs.getInt("id") +
+                    " | " + rs.getString("subscriber_number") +
+                    " | " + rs.getString("name") +
+                    " | " + rs.getString("phone") +
+                    " | " + rs.getTimestamp("request_time")
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.clear();
+            result.add("❌ DB error: " + e.getMessage());
+        }
+
+        return result;
     }
 
 

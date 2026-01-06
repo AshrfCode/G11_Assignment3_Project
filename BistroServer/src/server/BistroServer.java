@@ -112,6 +112,48 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(ok ? "OK_GUESTS" : "ERROR_GUESTS");
                         break;
                     }
+                 // =========================
+                    // WAITING LIST
+                    // =========================
+                    case ClientRequest.CMD_GET_WAITING_LIST: {
+                        var list = db.getWaitingList();
+                        client.sendToClient(list);
+                        break;
+                    }
+
+                    // =========================
+                    // TABLES
+                    // =========================
+                    case "GET_TABLES": {
+                        List<Table> tables = tableDAO.getAllTables();
+                        client.sendToClient(tables);
+                        break;
+                    }
+                    
+                    case "ADD_TABLE": {
+                        Table t = (Table) params[0];
+                        tableDAO.addTable(t);
+                        client.sendToClient("✅ Table added");
+                        client.sendToClient(tableDAO.getAllTables());
+                        break;
+                    }
+
+                    case "UPDATE_TABLE": {
+                        Table t = (Table) params[0];
+                        tableDAO.updateTable(t);
+                        client.sendToClient("✅ Table updated");
+                        client.sendToClient(tableDAO.getAllTables());
+                        break;
+                    }
+
+                    case "DELETE_TABLE": {
+                        int tableNumber = Integer.parseInt(params[0].toString());
+                        tableDAO.deleteTable(tableNumber);
+                        client.sendToClient("✅ Table deleted");
+                        client.sendToClient(tableDAO.getAllTables());
+                        break;
+                    }
+
 
                     /* =========================
                        RESERVATIONS
@@ -167,40 +209,6 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(result);
                         break;
                     }
-
-                    /* =========================
-                    MANAGE TABLES (REPRESENTATIVE ONLY)
-                    ========================= */
-                 case "GET_TABLES": {
-                     List<Table> tables = tableDAO.getAllTables();
-                     client.sendToClient(tables);
-                     break;
-                 }
-
-                 case "ADD_TABLE": {
-                     Table t = (Table) params[0];
-                     tableDAO.addTable(t);
-                     client.sendToClient("✅ Table added");
-                     client.sendToClient(tableDAO.getAllTables()); // refresh
-                     break;
-                 }
-
-                 case "UPDATE_TABLE": {
-                     Table t = (Table) params[0];
-                     tableDAO.updateTable(t);
-                     client.sendToClient("✅ Table updated");
-                     client.sendToClient(tableDAO.getAllTables()); // refresh
-                     break;
-                 }
-
-                 case "DELETE_TABLE": {
-                	    int tableNumber = Integer.parseInt(params[0].toString());
-                	    tableDAO.deleteTable(tableNumber);
-                	    client.sendToClient("✅ Table deleted");
-                	    client.sendToClient(tableDAO.getAllTables()); // refresh
-                	    break;
-                	}
-
 
                       
                     case "DISCONNECT":

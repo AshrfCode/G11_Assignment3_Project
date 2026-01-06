@@ -1,12 +1,46 @@
 package representativegui;
 
 import common.UserRole;
+import java.util.List;
+
+import client.ClientController;
+import client.ClientSession;
+import common.ClientRequest;
+
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.StackPane;
+
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
+import client.ClientController;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 
 public class representativeMainController {
+	
+	private ClientController client;
+
+    public void setClient(ClientController client) {
+        this.client = client;
+    }
+
 
     public enum EntryMode {
         HOME,
@@ -89,8 +123,8 @@ public class representativeMainController {
             waitingListBtn.setManaged(isRestaurant);
         }
     }
-
-
+    
+    
     // ---------------- NAV ACTIONS ----------------
 
     @FXML
@@ -98,12 +132,45 @@ public class representativeMainController {
         setSection("Today's Reservations");
         setPlaceholder("View and manage today's reservations.");
     }
-
     @FXML
     private void showWaitingList() {
         setSection("Waiting List");
-        setPlaceholder("Manage waiting list for the restaurant.");
+
+        if (client == null) {
+            setPlaceholder("❌ No server connection (client is null).");
+            return;
+        }
+
+        setPlaceholder("Loading waiting list...");
+
+        ListView<String> listView = new ListView<>();
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(listView);
+
+        ClientSession.activeHandler = (msg) -> {
+            if (msg instanceof List<?> list) {
+                Platform.runLater(() -> {
+                    listView.getItems().clear();
+
+                    if (list.isEmpty()) {
+                        listView.getItems().add("No one is currently waiting ✅");
+                        return;
+                    }
+
+                    if (list.get(0) instanceof String) {
+                        @SuppressWarnings("unchecked")
+                        List<String> items = (List<String>) list;
+                        listView.getItems().addAll(items);
+                    } else {
+                        listView.getItems().add("⚠️ Unexpected data from server.");
+                    }
+                });
+            }
+        };
+
+        client.sendRequest(new ClientRequest(ClientRequest.CMD_GET_WAITING_LIST, new Object[]{}));
     }
+
 
     @FXML
     private void showOrders() {

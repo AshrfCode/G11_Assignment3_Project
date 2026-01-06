@@ -235,7 +235,7 @@ public class BistroMainController implements ChatIF {
             }
 
             controller.setUsername(username);
-
+            controller.setClient(client);
             Stage stage = (Stage) txtUsername.getScene().getWindow();
             Scene scene = new Scene(root, 1000, 700);
             stage.setScene(scene);
