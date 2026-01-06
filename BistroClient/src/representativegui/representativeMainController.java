@@ -435,6 +435,46 @@ public class representativeMainController {
         setPlaceholder("Register a new subscriber.");
     }
 
+    @FXML
+    private void showReservationsToday() {
+        setSection("Today's Reservations");
+
+        if (client == null) {
+            setPlaceholder("❌ No server connection.");
+            return;
+        }
+
+        ListView<String> listView = new ListView<>();
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(listView);
+
+        ClientSession.activeHandler = (msg) -> {
+            if (msg instanceof List<?> list) {
+                Platform.runLater(() -> {
+                    listView.getItems().clear();
+
+                    if (list.isEmpty()) {
+                        listView.getItems().add("No reservations today ✅");
+                        return;
+                    }
+
+                    if (list.get(0) instanceof String) {
+                        @SuppressWarnings("unchecked")
+                        List<String> items = (List<String>) list;
+                        listView.getItems().addAll(items);
+                    }
+                });
+            }
+        };
+
+        client.sendRequest(
+            new ClientRequest(
+                ClientRequest.CMD_GET_TODAY_RESERVATIONS,
+                new Object[]{}
+            )
+        );
+    }
+
     // =========================
     // LOGOUT
     // =========================

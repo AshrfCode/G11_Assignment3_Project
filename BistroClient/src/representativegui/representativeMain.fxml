@@ -17,7 +17,7 @@
 
         <VBox spacing="10">
 		    <Button text="Today's Reservations"
-		            onAction="#showReservations"
+		            onAction="#showReservationsToday"
 		            styleClass="nav-btn"/>
 		
 		    <Button text="Waiting List"
@@ -31,18 +31,10 @@
                     onAction="#showOpeningHoursManagement"
                     styleClass="nav-btn"/>
 
-		    <Button text="Create Subscriber"
-		            onAction="#showCreateSubscriber"
-		            styleClass="nav-btn"/>
-		
 		   <Button text="Manage Subscribers"
                    onAction="#showManageSubscribers"
                    styleClass="nav-btn"/>
 		
-		    <Button text="Reports"
-		            onAction="#showReports"
-		            styleClass="nav-btn"/>
-		            
 		    <Button fx:id="reportsBtn"
 			        text="Visual Reports"
 			        onAction="#showVisualReports"
