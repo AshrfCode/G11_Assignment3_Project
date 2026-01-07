@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="guestgui.PaymentController"
+      spacing="14"
+      styleClass="card"
+      maxWidth="520">
+
+    <Label text="Pay Bill"
+           style="-fx-font-size: 22px; -fx-font-weight: bold;" />
+
+    <Label text="Enter your reservation confirmation code to pay. (100₪ per diner)"
+           wrapText="true"/>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Confirmation code:"/>
+        <TextField fx:id="codeField" promptText="e.g. 123456" prefWidth="160"/>
+        <Button text="Find" onAction="#handleFind"/>
+		<Button fx:id="payBtn" text="Pay" onAction="#handlePay" disable="true"/>
+
+    </HBox>
+
+    <Separator/>
+
+    <GridPane hgap="10" vgap="8">
+        <Label text="Diners:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <Label fx:id="dinersLabel" text="-" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+        <Label text="Total before discount:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <Label fx:id="totalLabel" text="-" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+        <Label text="Discount:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <Label fx:id="discountLabel" text="-" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+        <Label text="Final total:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <Label fx:id="finalLabel" text="-" GridPane.rowIndex="3" GridPane.columnIndex="1"
+               style="-fx-font-weight: bold;"/>
+    </GridPane>
+
+    <Label fx:id="statusLabel" text="" wrapText="true"/>
+
+</VBox>

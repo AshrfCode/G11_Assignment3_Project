@@ -35,8 +35,6 @@ public class TableDAO {
                     t.setCapacity(rs.getInt("capacity"));
                     t.setLocation(rs.getString("location"));
                     t.setStatus(rs.getString("status"));
-                    t.setReservedFrom(rs.getTimestamp("reserved_from"));
-                    t.setReservedTo(rs.getTimestamp("reserved_to"));
 
                     tables.add(t);
                 }

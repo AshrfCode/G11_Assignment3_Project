@@ -113,7 +113,16 @@ public class ClientController extends AbstractClient {
         sendRequest(new ClientRequest(ClientRequest.CMD_CANCEL_RESERVATION,
                 new Object[]{confirmationCode, subscriberId, email, phone}));
     }
-
+    
+    public void payReservation(String confirmationCode) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_PAY_RESERVATION,
+                new Object[]{confirmationCode}));
+    }
+    
+    public void previewBill(String confirmationCode) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_PREVIEW_BILL,
+                new Object[]{confirmationCode}));
+    }
 
 
 

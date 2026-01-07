@@ -98,9 +98,21 @@ public class GuestMainController {
     @FXML
     private void showPayment() {
         if (sectionTitle != null) sectionTitle.setText("Payment");
-        contentArea.getChildren().setAll(new Label("Payment screen (guest)"));
-    }
 
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/PaymentView.fxml"));
+            Parent view = loader.load();
+
+            PaymentController controller = loader.getController();
+            controller.setClient(client);
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            contentArea.getChildren().setAll(new Label("❌ Failed to load payment screen."));
+        }
+    }
     @FXML
     private void handleBack() {
         try {

@@ -20,7 +20,11 @@ public class ClientRequest implements Serializable {
 
 	    public static final String CMD_GET_TODAY_RESERVATIONS   = "GET_TODAY_RESERVATIONS";
 
-         public static final String CMD_GET_ALL_SUBSCRIBERS = "GET_ALL_SUBSCRIBERS";
+	     public static final String CMD_GET_ALL_SUBSCRIBERS = "GET_ALL_SUBSCRIBERS";
+	     public static final String CMD_PAY_RESERVATION = "PAY_RESERVATION";
+	     public static final String CMD_PREVIEW_BILL = "PREVIEW_BILL";
+
+
     private String command;
     private Object[] params;
 

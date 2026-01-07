@@ -132,8 +132,22 @@ public class SubscriberMainController {
     @FXML
     private void showPayment() {
         setSection("Pay");
-        setPlaceholder("Payment screen (Subscriber).");
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/PaymentView.fxml"));
+            Parent view = loader.load();
+
+            guestgui.PaymentController controller = loader.getController();
+            controller.setClient(client);
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setPlaceholder("❌ Failed to load payment screen.");
+        }
     }
+
 
     @FXML
     private void showUpdateDetails() {

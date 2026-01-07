@@ -170,48 +170,49 @@ public class DBController {
     }
 
     public List<String> getTodayReservations() {
-        List<String> result = new ArrayList<>();
+    List<String> result = new ArrayList<>();
 
-        String sql =
-            "SELECT reserve_time, dinners_number, table_number, reservation_code " +
-            "FROM reservations " +
-            "WHERE reserve_date = CURDATE() AND reservation_status='ACTIVE' " +
-            "ORDER BY reserve_time";
+    String sql =
+        "SELECT start_time, dinners_number, table_number, confirmation_code " +
+        "FROM reservations " +
+        "WHERE DATE(start_time) = CURDATE() AND status = 'ACTIVE' " +
+        "ORDER BY start_time";
 
-        PooledConnection pConn = null;
+    PooledConnection pConn = null;
 
-        try {
-            pConn = pool.getConnection();
-            Connection conn = pConn.getConnection();
+    try {
+        pConn = pool.getConnection();
+        Connection conn = pConn.getConnection();
 
-            try (PreparedStatement ps = conn.prepareStatement(sql);
-                 ResultSet rs = ps.executeQuery()) {
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-                while (rs.next()) {
-                    String time = rs.getTime("reserve_time").toString();
-                    int diners = rs.getInt("dinners_number");
-                    int table = rs.getInt("table_number");
-                    String code = rs.getString("reservation_code");
+            while (rs.next()) {
+                String time = rs.getTimestamp("start_time").toLocalDateTime().toLocalTime().toString();
+                int diners = rs.getInt("dinners_number");
+                int table = rs.getInt("table_number");
+                String code = rs.getString("confirmation_code");
 
-                    result.add(
-                        "🕒 " + time +
-                        " | 👥 " + diners +
-                        " | 🍽️ Table " + table +
-                        " | 🔑 " + code
-                    );
-                }
+                result.add(
+                    "🕒 " + time +
+                    " | 👥 " + diners +
+                    " | 🍽️ Table " + table +
+                    " | 🔑 " + code
+                );
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            result.clear();
-            result.add("❌ DB error: " + e.getMessage());
-        } finally {
-            if (pConn != null) pool.releaseConnection(pConn);
         }
 
-        return result;
+    } catch (Exception e) {
+        e.printStackTrace();
+        result.clear();
+        result.add("❌ DB error: " + e.getMessage());
+    } finally {
+        if (pConn != null) pool.releaseConnection(pConn);
     }
+
+    return result;
+}
+
 
     /**
      * CREATE RESERVATION
@@ -814,4 +815,210 @@ public class DBController {
             this.close = close;
         }
     }
+    
+    public String payReservation(String confirmationCode) {
+        PooledConnection pConn = null;
+
+        try {
+            String code = (confirmationCode == null) ? "" : confirmationCode.trim();
+            if (code.isEmpty()) return "PAY_FAIL|Invalid confirmation code";
+
+            pConn = pool.getConnection();
+            pConn.touch();
+            Connection conn = pConn.getConnection();
+
+            boolean oldAuto = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+
+            try {
+                // lock reservation row
+                String selectSql =
+                        "SELECT reservation_id, status, subscriber_number, dinners_number, start_time, end_time " +
+                        "FROM `Reservations` WHERE confirmation_code=? FOR UPDATE";
+
+                int reservationId;
+                String status;
+                Integer subscriberNumber;
+                int diners;
+                Timestamp startTs;
+                Timestamp endTs;
+
+                try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
+                    ps.setString(1, code);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return "PAY_FAIL|Confirmation code not found";
+                        }
+
+                        reservationId = rs.getInt("reservation_id");
+                        status = rs.getString("status");
+
+                        int rawSub = rs.getInt("subscriber_number");
+                        subscriberNumber = rs.wasNull() ? null : rawSub;
+
+                        diners = rs.getInt("dinners_number");
+                        startTs = rs.getTimestamp("start_time");
+                        endTs = rs.getTimestamp("end_time");
+                    }
+                }
+
+                if (!"ACTIVE".equalsIgnoreCase(status)) {
+                    conn.rollback();
+                    return "PAY_FAIL|Reservation is not ACTIVE (already paid/canceled)";
+                }
+
+                // time window: now between start_time and end_time inclusive
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime start = startTs.toLocalDateTime();
+                LocalDateTime end = endTs.toLocalDateTime();
+
+                if (now.isBefore(start)) {
+                    conn.rollback();
+                    return "PAY_FAIL|Too early to pay (payment allowed from start time)";
+                }
+                if (now.isAfter(end)) {
+                    conn.rollback();
+                    return "PAY_FAIL|Payment window expired (more than 2 hours)";
+                }
+
+                double total = diners * 100.0;
+                double discount = (subscriberNumber != null) ? total * 0.10 : 0.0;
+                double finalTotal = total - discount;
+
+                // insert bill
+                String insertBill =
+                        "INSERT INTO bills (total_amount, discount_amount, bill_date, reservation_id) " +
+                        "VALUES (?, ?, NOW(), ?)";
+
+                int billNumber;
+                try (PreparedStatement ps = conn.prepareStatement(insertBill, Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setDouble(1, total);
+                    ps.setDouble(2, discount);
+                    ps.setInt(3, reservationId);
+
+                    int rows = ps.executeUpdate();
+                    if (rows <= 0) {
+                        conn.rollback();
+                        return "PAY_FAIL|Failed to create bill";
+                    }
+
+                    try (ResultSet keys = ps.getGeneratedKeys()) {
+                        if (!keys.next()) {
+                            conn.rollback();
+                            return "PAY_FAIL|Failed to get bill number";
+                        }
+                        billNumber = keys.getInt(1);
+                    }
+                }
+
+                // update reservation status -> COMPLETED (table becomes free)
+                String updateSql =
+                        "UPDATE `Reservations` SET status='COMPLETED' " +
+                        "WHERE reservation_id=? AND status='ACTIVE'";
+
+                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                    ps.setInt(1, reservationId);
+                    int rows = ps.executeUpdate();
+                    if (rows <= 0) {
+                        conn.rollback();
+                        return "PAY_FAIL|Failed to mark reservation as COMPLETED";
+                    }
+                }
+
+                conn.commit();
+
+                // PAY_OK|billNumber|diners|total|discount|final
+                return "PAY_OK|" + billNumber + "|" + diners + "|"
+                        + formatMoney(total) + "|" + formatMoney(discount) + "|" + formatMoney(finalTotal);
+
+            } finally {
+                conn.setAutoCommit(oldAuto);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "PAY_FAIL|Server error: " + e.getMessage();
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+
+    private String formatMoney(double v) {
+        return String.format(java.util.Locale.US, "%.2f", v);
+    }
+    
+    public String previewBill(String confirmationCode) {
+        PooledConnection pConn = null;
+
+        try {
+            String code = (confirmationCode == null) ? "" : confirmationCode.trim();
+            if (code.isEmpty()) return "PREVIEW_FAIL|Invalid confirmation code";
+
+            pConn = pool.getConnection();
+            pConn.touch();
+            Connection conn = pConn.getConnection();
+
+            String sql =
+                    "SELECT status, subscriber_number, dinners_number, start_time, end_time " +
+                    "FROM `Reservations` WHERE confirmation_code=?";
+
+            String status;
+            Integer subscriberNumber;
+            int diners;
+            Timestamp startTs;
+            Timestamp endTs;
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, code);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        return "PREVIEW_FAIL|Confirmation code not found";
+                    }
+
+                    status = rs.getString("status");
+
+                    int rawSub = rs.getInt("subscriber_number");
+                    subscriberNumber = rs.wasNull() ? null : rawSub;
+
+                    diners = rs.getInt("dinners_number");
+                    startTs = rs.getTimestamp("start_time");
+                    endTs = rs.getTimestamp("end_time");
+                }
+            }
+
+            // must be ACTIVE to pay
+            if (!"ACTIVE".equalsIgnoreCase(status)) {
+                return "PREVIEW_FAIL|Reservation is not ACTIVE (already paid/canceled)";
+            }
+
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime start = startTs.toLocalDateTime();
+            LocalDateTime end = endTs.toLocalDateTime();
+
+            if (now.isBefore(start)) {
+                return "PREVIEW_FAIL|Too early to pay (payment allowed from start time)";
+            }
+            if (now.isAfter(end)) {
+                return "PREVIEW_FAIL|Payment window expired (more than 2 hours)";
+            }
+
+            double total = diners * 100.0;
+            double discount = (subscriberNumber != null) ? total * 0.10 : 0.0;
+            double finalTotal = total - discount;
+
+            // PREVIEW_OK|diners|total|discount|final
+            return "PREVIEW_OK|" + diners + "|" + formatMoney(total) + "|"
+                    + formatMoney(discount) + "|" + formatMoney(finalTotal);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "PREVIEW_FAIL|Server error: " + e.getMessage();
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+
 }
+
+

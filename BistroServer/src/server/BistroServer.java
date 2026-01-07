@@ -169,6 +169,21 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(ok ? "SPECIAL_OPENING_DELETED" : "SPECIAL_OPENING_DELETE_FAIL");
                         break;
                     }
+                    case ClientRequest.CMD_PAY_RESERVATION: {
+                        String code = params[0].toString();
+                        String result = db.payReservation(code);
+                        client.sendToClient(result);
+                        break;
+                    }
+                    
+                    case ClientRequest.CMD_PREVIEW_BILL: {
+                        String code = params[0].toString();
+                        String result = db.previewBill(code);
+                        client.sendToClient(result);
+                        break;
+                    }
+
+
 
 
                     // =========================
