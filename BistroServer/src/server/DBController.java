@@ -127,7 +127,7 @@ public class DBController {
     // RESERVATIONS
     // ============================================================
 
-    public List<String> getAvailableReservationSlots(String dateStr, int diners) {
+    public List<String> getAvailableReservationSlots(String dateStr, int dinners) {
         List<String> slots = new ArrayList<>();
 
         PooledConnection pConn = null;
@@ -152,7 +152,7 @@ public class DBController {
                 LocalDateTime start = LocalDateTime.of(date, t);
 
                 if (!start.isBefore(minAllowed) && !start.isAfter(maxAllowed)) {
-                    if (isSlotAvailable(conn, start, diners)) {
+                    if (isSlotAvailable(conn, start, dinners)) {
                         slots.add(t.toString()); // "HH:mm"
                     }
                 }
@@ -217,9 +217,9 @@ public class DBController {
      * CREATE RESERVATION
      * ✅ NEW BEHAVIOR:
      * - If customerIdOrEmail is a subscriberId -> use it
-     * - Else (guest): if email/phone belongs to a subscriber in users table -> auto-upgrade and save subscriber_id
+     * - Else (guest): if email/phone belongs to a subscriber in users table -> auto-upgrade and save subscriber_number
      */
-    public String createReservation(String dateTimeStr, int diners, String customerIdOrEmail, String phone, String email) {
+    public String createReservation(String dateTimeStr, int dinners, String customerIdOrEmail, String phone, String email) {
         PooledConnection pConn = null;
 
         try {
@@ -244,7 +244,7 @@ public class DBController {
                 return null;
             }
 
-            Integer tableId = findBestAvailableTable(conn, start, diners);
+            Integer tableId = findBestAvailableTable(conn, start, dinners);
             if (tableId == null) {
                 return null;
             }
@@ -268,15 +268,15 @@ public class DBController {
             String code = generateConfirmationCode();
 
             String sql =
-                    "INSERT INTO `Reservation` " +
-                    "(`confirmation_code`, `start_time`, `end_time`, `diners`, `subscriber_id`, `guest_phone`, `guest_email`, `status`, `created_at`, `table_id`) " +
+                    "INSERT INTO `Reservations` " +
+                    "(`confirmation_code`, `start_time`, `end_time`, `dinners_number`, `subscriber_number`, `phone`, `email`, `status`, `created_at`, `table_number`) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', NOW(), ?)";
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, code);
                 stmt.setTimestamp(2, Timestamp.valueOf(start));
                 stmt.setTimestamp(3, Timestamp.valueOf(end));
-                stmt.setInt(4, diners);
+                stmt.setInt(4, dinners);
 
                 if (subscriberId == null) stmt.setNull(5, Types.INTEGER);
                 else stmt.setInt(5, subscriberId);
@@ -552,8 +552,8 @@ public class DBController {
             try {
                 // 1) Lock the reservation row so check + update are safe
                 String selectSql =
-                        "SELECT status, subscriber_id, guest_email, guest_phone " +
-                        "FROM `Reservation` WHERE confirmation_code=? FOR UPDATE";
+                        "SELECT status, subscriber_number, email, phone " +
+                        "FROM `Reservations` WHERE confirmation_code=? FOR UPDATE";
 
                 String status;
                 Integer subId;
@@ -569,11 +569,11 @@ public class DBController {
                         }
 
                         status = rs.getString("status");
-                        int raw = rs.getInt("subscriber_id");
+                        int raw = rs.getInt("subscriber_number");
                         subId = rs.wasNull() ? null : raw;
 
-                        gEmail = rs.getString("guest_email");
-                        gPhone = rs.getString("guest_phone");
+                        gEmail = rs.getString("email");
+                        gPhone = rs.getString("phone");
                     }
                 }
 
@@ -607,7 +607,7 @@ public class DBController {
 
                 // 4) Update
                 String updateSql =
-                        "UPDATE `Reservation` SET status='CANCELED' " +
+                        "UPDATE `Reservations` SET status='CANCELED' " +
                         "WHERE confirmation_code=? AND status='ACTIVE'";
 
                 int rows;
@@ -710,33 +710,33 @@ public class DBController {
 
     // -------------------- table-based helpers --------------------
 
-    private boolean isSlotAvailable(Connection conn, LocalDateTime start, int diners) throws SQLException {
-        return findBestAvailableTable(conn, start, diners) != null;
+    private boolean isSlotAvailable(Connection conn, LocalDateTime start, int dinners) throws SQLException {
+        return findBestAvailableTable(conn, start, dinners) != null;
     }
 
-    private Integer findBestAvailableTable(Connection conn, LocalDateTime start, int diners) throws SQLException {
+    private Integer findBestAvailableTable(Connection conn, LocalDateTime start, int dinners) throws SQLException {
         LocalDateTime end = start.plusHours(2);
 
         String sql =
-                "SELECT t.table_id " +
-                "FROM `table` t " +
+                "SELECT t.table_number " +
+                "FROM `restaurant_tables` t " +
                 "WHERE t.capacity >= ? " +
                 "AND NOT EXISTS ( " +
-                "   SELECT 1 FROM `Reservation` r " +
+                "   SELECT 1 FROM `Reservations` r " +
                 "   WHERE r.status='ACTIVE' " +
-                "     AND r.table_id = t.table_id " +
+                "     AND r.table_number = t.table_number " +
                 "     AND r.start_time < ? AND r.end_time > ? " +
                 ") " +
-                "ORDER BY t.capacity ASC, t.table_id ASC " +
+                "ORDER BY t.capacity ASC, t.table_number ASC " +
                 "LIMIT 1";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, diners);
+            stmt.setInt(1, dinners);
             stmt.setTimestamp(2, Timestamp.valueOf(end));
             stmt.setTimestamp(3, Timestamp.valueOf(start));
 
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return rs.getInt("table_id");
+                if (rs.next()) return rs.getInt("table_number");
             }
         }
         return null;
