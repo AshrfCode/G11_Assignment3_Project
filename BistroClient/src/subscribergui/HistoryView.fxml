@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="subscribergui.HistoryController"
+      spacing="10" prefWidth="900" prefHeight="600">
+
+    <HBox spacing="20">
+        <Label text="Reservations:" />
+        <Label fx:id="totalReservationsLabel" text="0"/>
+
+        <Label text="Visits (COMPLETED):" />
+        <Label fx:id="visitsLabel" text="0"/>
+    </HBox>
+
+    <TableView fx:id="historyTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="startCol" text="Start" prefWidth="160"/>
+            <TableColumn fx:id="endCol" text="End" prefWidth="160"/>
+            <TableColumn fx:id="dinersCol" text="Diners" prefWidth="80"/>
+            <TableColumn fx:id="tableCol" text="Table" prefWidth="80"/>
+            <TableColumn fx:id="codeCol" text="Code" prefWidth="140"/>
+            <TableColumn fx:id="statusCol" text="Status" prefWidth="120"/>
+        </columns>
+    </TableView>
+
+    <Label fx:id="statusLabel" text="" />
+</VBox>

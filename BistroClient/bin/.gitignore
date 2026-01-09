@@ -1,11 +1,4 @@
-<<<<<<< HEAD
-/.DS_Store
-/clientgui/
 /client/
-/guestgui/
-/representativegui/
 /subscribergui/
-=======
 /representativegui/
-/clientgui/
->>>>>>> branch 'master' of https://github.com/AshrfCode/G11_Assignment3_Project.git
+/guestgui/

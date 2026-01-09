@@ -1,13 +1,12 @@
 package client;
 
+import java.io.IOException;
+import java.util.List;
+
 import common.ChatIF;
 import common.ClientRequest;
 import common.Order;
 import common.ReservationResponse;
-
-import java.io.IOException;
-import java.util.List;
-
 import ocsf.client.AbstractClient;
 
 public class ClientController extends AbstractClient {
@@ -76,6 +75,17 @@ public class ClientController extends AbstractClient {
             // ⛔ Tables are handled ONLY by activeHandler (GUI)
             return;
         }
+        
+        if (msg instanceof common.SubscriberHistoryResponse) {
+            // it's handled by activeHandler already
+            return;
+        }
+        
+        if (ClientSession.activeHandler != null) {
+            ClientSession.activeHandler.accept(msg);
+            return;
+        }
+
 
         // -------------------------
         // Fallback
@@ -123,8 +133,12 @@ public class ClientController extends AbstractClient {
         sendRequest(new ClientRequest(ClientRequest.CMD_PREVIEW_BILL,
                 new Object[]{confirmationCode}));
     }
-
-
+    
+    public void requestSubscriberHistory(int subscriberId) {
+    	sendRequest(new ClientRequest(ClientRequest.CMD_GET_SUBSCRIBER_HISTORY,
+            new Object[] { subscriberId }
+        ));
+    }
 
     public void closeConnectionSafely() {
         try {

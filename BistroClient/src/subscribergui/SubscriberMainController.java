@@ -158,8 +158,22 @@ public class SubscriberMainController {
     @FXML
     private void showHistory() {
         setSection("View History");
-        setPlaceholder("History screen (Subscriber).");
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/subscribergui/HistoryView.fxml"));
+            Parent view = loader.load();
+
+            HistoryController controller = loader.getController();
+            controller.init(client, subscriberId); // pass needed data
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setPlaceholder("❌ Failed to load history screen.");
+        }
     }
+
 
     @FXML
     private void handleLogout() {

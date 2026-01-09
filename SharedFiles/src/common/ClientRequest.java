@@ -23,6 +23,8 @@ public class ClientRequest implements Serializable {
 	     public static final String CMD_GET_ALL_SUBSCRIBERS = "GET_ALL_SUBSCRIBERS";
 	     public static final String CMD_PAY_RESERVATION = "PAY_RESERVATION";
 	     public static final String CMD_PREVIEW_BILL = "PREVIEW_BILL";
+	     public static final String CMD_GET_SUBSCRIBER_HISTORY = "GET_SUBSCRIBER_HISTORY";
+
 
 
     private String command;

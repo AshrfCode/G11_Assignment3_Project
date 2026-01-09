@@ -1,15 +1,22 @@
 package server;
 
 import java.security.SecureRandom;
-import java.sql.*;
+import java.sql.Connection;
 import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import common.Order;
+import common.ReservationHistoryRow;
 
 public class DBController {
 	
@@ -279,8 +286,17 @@ public class DBController {
                 stmt.setTimestamp(3, Timestamp.valueOf(end));
                 stmt.setInt(4, dinners);
 
-                if (subscriberId == null) stmt.setNull(5, Types.INTEGER);
-                else stmt.setInt(5, subscriberId);
+                if (subscriberId == null) {
+                    stmt.setNull(5, Types.VARCHAR);
+                } else {
+                    String subNumber = getSubscriberNumberByUserId(conn, subscriberId);
+                    if (subNumber == null || subNumber.isBlank()) {
+                        stmt.setNull(5, Types.VARCHAR); // fallback, treat as guest
+                    } else {
+                        stmt.setString(5, subNumber);   // ✅ THIS is the correct value ("SUB123")
+                    }
+                }
+
 
                 // keep guest info too (helps cancel from subscriber if old records exist)
                 stmt.setString(6, safePhone);
@@ -557,7 +573,7 @@ public class DBController {
                         "FROM `Reservations` WHERE confirmation_code=? FOR UPDATE";
 
                 String status;
-                Integer subId;
+                String subValue;
                 String gEmail;
                 String gPhone;
 
@@ -570,8 +586,8 @@ public class DBController {
                         }
 
                         status = rs.getString("status");
-                        int raw = rs.getInt("subscriber_number");
-                        subId = rs.wasNull() ? null : raw;
+                        subValue = rs.getString("subscriber_number"); // can be "SUB123" or "1" or null
+
 
                         gEmail = rs.getString("email");
                         gPhone = rs.getString("phone");
@@ -586,25 +602,40 @@ public class DBController {
 
                 // 3) Ownership check (only for subscriber cancel)
                 if (restrictToOwner) {
-                    boolean okOwner = false;
+				    boolean okOwner = false;
+				
+				    // ✅ ownership by subscriber (supports both old data "1" and new data "SUB123")
+				    if (requesterSubscriberId != null && subValue != null && !subValue.isBlank()) {
+				
+				        // Case 1: old rows stored user_id as string number ("1")
+				        if (subValue.trim().equals(String.valueOf(requesterSubscriberId))) {
+				            okOwner = true;
+				        }
+				
+				        // Case 2: new rows stored real subscriber_number ("SUB123")
+				        if (!okOwner && subValue.toUpperCase().startsWith("SUB")) {
+				            String requesterSubNumber = getSubscriberNumberByUserId(conn, requesterSubscriberId);
+				            if (requesterSubNumber != null && subValue.equalsIgnoreCase(requesterSubNumber)) {
+				                okOwner = true;
+				            }
+				        }
+				    }
+				
+				    // fallback checks by email / phone
+				    if (!okOwner && !safeEmail.isEmpty() && gEmail != null && !gEmail.trim().isEmpty()) {
+				        okOwner = gEmail.trim().equalsIgnoreCase(safeEmail);
+				    }
+				
+				    if (!okOwner && !safePhone.isEmpty() && gPhone != null && !gPhone.trim().isEmpty()) {
+				        okOwner = gPhone.trim().equals(safePhone);
+				    }
+				
+				    if (!okOwner) {
+				        conn.rollback();
+				        return CANCEL_FAIL_NOT_OWNER;
+				    }
+				}
 
-                    if (requesterSubscriberId != null && subId != null && subId.equals(requesterSubscriberId)) {
-                        okOwner = true;
-                    }
-
-                    if (!okOwner && !safeEmail.isEmpty() && gEmail != null && !gEmail.trim().isEmpty()) {
-                        okOwner = gEmail.trim().equalsIgnoreCase(safeEmail);
-                    }
-
-                    if (!okOwner && !safePhone.isEmpty() && gPhone != null && !gPhone.trim().isEmpty()) {
-                        okOwner = gPhone.trim().equals(safePhone);
-                    }
-
-                    if (!okOwner) {
-                        conn.rollback();
-                        return CANCEL_FAIL_NOT_OWNER;
-                    }
-                }
 
                 // 4) Update
                 String updateSql =
@@ -797,6 +828,8 @@ public class DBController {
         int num = 100000 + rnd.nextInt(900000);
         return String.valueOf(num);
     }
+    
+    
 
     private Integer tryParseInt(String s) {
         try {
@@ -805,6 +838,18 @@ public class DBController {
             return null;
         }
     }
+    
+    private String getSubscriberNumberByUserId(Connection conn, int userId) throws SQLException {
+        String sql = "SELECT subscriber_number FROM subscribers WHERE user_id = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("subscriber_number");
+            }
+        }
+        return null;
+    }
+
 
     private static class HoursRange {
         final LocalTime open;
@@ -838,10 +883,12 @@ public class DBController {
 
                 int reservationId;
                 String status;
-                Integer subscriberNumber;
                 int diners;
                 Timestamp startTs;
                 Timestamp endTs;
+                String subscriberNumber = null;
+                boolean isSubscriber = false;
+
 
                 try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
                     ps.setString(1, code);
@@ -854,8 +901,9 @@ public class DBController {
                         reservationId = rs.getInt("reservation_id");
                         status = rs.getString("status");
 
-                        int rawSub = rs.getInt("subscriber_number");
-                        subscriberNumber = rs.wasNull() ? null : rawSub;
+                        subscriberNumber = rs.getString("subscriber_number"); // "SUB123" or null
+                        isSubscriber = (subscriberNumber != null && !subscriberNumber.isBlank());
+
 
                         diners = rs.getInt("dinners_number");
                         startTs = rs.getTimestamp("start_time");
@@ -883,7 +931,8 @@ public class DBController {
                 }
 
                 double total = diners * 100.0;
-                double discount = (subscriberNumber != null) ? total * 0.10 : 0.0;
+                double discount = isSubscriber ? total * 0.10 : 0.0;
+
                 double finalTotal = total - discount;
 
                 // insert bill
@@ -964,10 +1013,12 @@ public class DBController {
                     "FROM `Reservations` WHERE confirmation_code=?";
 
             String status;
-            Integer subscriberNumber;
             int diners;
             Timestamp startTs;
             Timestamp endTs;
+            String subscriberNumber = null;
+            boolean isSubscriber = false;
+
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, code);
@@ -978,8 +1029,9 @@ public class DBController {
 
                     status = rs.getString("status");
 
-                    int rawSub = rs.getInt("subscriber_number");
-                    subscriberNumber = rs.wasNull() ? null : rawSub;
+                    subscriberNumber = rs.getString("subscriber_number"); // "SUB123" or null
+                    isSubscriber = (subscriberNumber != null && !subscriberNumber.isBlank());
+
 
                     diners = rs.getInt("dinners_number");
                     startTs = rs.getTimestamp("start_time");
@@ -1004,7 +1056,8 @@ public class DBController {
             }
 
             double total = diners * 100.0;
-            double discount = (subscriberNumber != null) ? total * 0.10 : 0.0;
+            double discount = isSubscriber ? total * 0.10 : 0.0;
+
             double finalTotal = total - discount;
 
             // PREVIEW_OK|diners|total|discount|final
@@ -1017,6 +1070,80 @@ public class DBController {
         } finally {
             if (pConn != null) pool.releaseConnection(pConn);
         }
+    }
+    
+    // Subscriber History Section
+    public List<ReservationHistoryRow> getSubscriberReservationHistory(int subscriberUserId) {
+        List<ReservationHistoryRow> out = new ArrayList<>();
+
+        String sql =
+            "SELECT r.start_time, r.end_time, r.dinners_number, r.table_number, " +
+            "       r.confirmation_code, r.status, r.created_at " +
+            "FROM reservations r " +
+            "JOIN subscribers s ON s.subscriber_number = r.subscriber_number " +
+            "WHERE s.user_id = ? " +
+            "ORDER BY r.start_time DESC";
+
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, subscriberUserId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        var start = rs.getTimestamp("start_time").toLocalDateTime();
+                        var end = rs.getTimestamp("end_time").toLocalDateTime();
+                        int diners = rs.getInt("dinners_number");
+                        int table = rs.getInt("table_number");
+                        String code = rs.getString("confirmation_code");
+                        String status = rs.getString("status");
+                        var created = rs.getTimestamp("created_at").toLocalDateTime();
+
+                        out.add(new ReservationHistoryRow(start, end, diners, table, code, status, created));
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (pConn != null)
+            	pool.releaseConnection(pConn);
+        }
+        return out;
+    }
+    
+    // Subscriber Visit History 
+    public int countSubscriberVisits(int subscriberUserId) {
+        String sql =
+            "SELECT COUNT(*) AS c " +
+            "FROM reservations r " +
+            "JOIN subscribers s ON s.subscriber_number = r.subscriber_number " +
+            "WHERE s.user_id = ? AND r.status = 'COMPLETED'";
+
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, subscriberUserId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) return rs.getInt("c");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (pConn != null)
+            	pool.releaseConnection(pConn);
+        }
+        return 0;
     }
 
 }

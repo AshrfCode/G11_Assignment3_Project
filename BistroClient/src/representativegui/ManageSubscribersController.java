@@ -39,12 +39,6 @@ public class ManageSubscribersController {
     // FORM
     // =========================
 
-    @FXML private TextField nameField;
-    @FXML private TextField emailField;
-    @FXML private TextField phoneField;
-    @FXML private PasswordField passwordField;
-    @FXML private CheckBox activeCheck;
-
     @FXML private Label msgLabel;
 
     // =========================
@@ -62,17 +56,6 @@ public class ManageSubscribersController {
         colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
         colActive.setCellValueFactory(new PropertyValueFactory<>("active"));
         colCreatedAt.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
-
-        // כשבוחרים מנוי – למלא שדות
-        subscribersTable.getSelectionModel().selectedItemProperty().addListener((obs, o, sel) -> {
-            if (sel != null) {
-                nameField.setText(sel.getName());
-                emailField.setText(sel.getEmail());
-                phoneField.setText(sel.getPhone());
-                activeCheck.setSelected(sel.isActive());
-                passwordField.clear(); // לא מציגים סיסמה
-            }
-        });
 
         loadSubscribers();
     }
@@ -124,56 +107,6 @@ public class ManageSubscribersController {
     @FXML
     private void refresh() {
         loadSubscribers();
-    }
-
-    @FXML
-    private void addSubscriber() {
-
-        try {
-            String name = nameField.getText().trim();
-            String email = emailField.getText().trim();
-            String phone = phoneField.getText().trim();
-            String password = passwordField.getText();
-            boolean active = activeCheck.isSelected();
-
-            if (name.isBlank() || email.isBlank() || password.isBlank()) {
-                msgLabel.setText("❌ Fill required fields");
-                return;
-            }
-
-            Object[] params = { name, email, phone, password, active };
-
-            ClientManager.getClient().sendToServer(
-                new ClientRequest("ADD_SUBSCRIBER", params)
-            );
-
-        } catch (Exception e) {
-            msgLabel.setText("❌ Invalid input");
-        }
-    }
-
-    @FXML
-    private void updateSubscriber() {
-
-        User selected = subscribersTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            msgLabel.setText("❌ Select subscriber first");
-            return;
-        }
-
-        try {
-            selected.setName(nameField.getText().trim());
-            selected.setEmail(emailField.getText().trim());
-            selected.setPhone(phoneField.getText().trim());
-            selected.setActive(activeCheck.isSelected());
-
-            ClientManager.getClient().sendToServer(
-                new ClientRequest("UPDATE_SUBSCRIBER", new Object[]{ selected })
-            );
-
-        } catch (Exception e) {
-            msgLabel.setText("❌ Update failed");
-        }
     }
     
     @FXML

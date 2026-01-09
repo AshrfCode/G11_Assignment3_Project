@@ -1,24 +1,21 @@
 package server;
 
 import java.io.IOException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import common.ClientRequest;
-import common.Order;
 import common.LoginRequest;
-
+import common.ReservationHistoryRow;
+import common.SubscriberHistoryResponse;
+import entities.Table;
+import entities.User;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
-
-import servergui.ServerMainController;
 import server.dao.MySQLUserDAO;
 import server.dao.TableDAO;
-
-import entities.User;
-import entities.Table;
+import servergui.ServerMainController;
 
 public class BistroServer extends AbstractServer {
 
@@ -182,6 +179,23 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(result);
                         break;
                     }
+                    
+                    case ClientRequest.CMD_GET_SUBSCRIBER_HISTORY: {
+                        int subscriberId = (int) request.getParams()[0];
+
+                        List<ReservationHistoryRow> reservations =
+                                db.getSubscriberReservationHistory(subscriberId);
+
+                        int visits =
+                                db.countSubscriberVisits(subscriberId);
+
+                        SubscriberHistoryResponse response =
+                                new SubscriberHistoryResponse(reservations, visits);
+
+                        client.sendToClient(response);
+                        break;
+                    }
+
 
 
 
