@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import common.ReservationHistoryRow;
+import server.dao.WaitingListDAO;
 
 public class DBController {
 	
@@ -1117,6 +1118,54 @@ public class DBController {
         return out;
     }
     
+    public String joinWaitingListAsSubscriber(int userId, int diners, String phone, String email) {
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            pConn.touch();
+            Connection conn = pConn.getConnection();
+
+            WaitingListDAO dao = new WaitingListDAO(conn);
+            return dao.joinAsSubscriber(userId, diners, phone, email);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+
+    private String generateWLConfirmationCode() {
+        SecureRandom random = new SecureRandom();
+        int number = 100000 + random.nextInt(900000); // 6 ספרות
+        return "WL" + number;
+    }
+
+
+    public boolean leaveWaitingListAsSubscriber(int userId) {
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            pConn.touch();
+            Connection conn = pConn.getConnection();
+
+            WaitingListDAO dao = new WaitingListDAO(conn);
+            return dao.leaveAsSubscriber(userId);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+
+    
     // Subscriber Visit History 
     public int countSubscriberVisits(int subscriberUserId) {
         String sql =
@@ -1144,7 +1193,47 @@ public class DBController {
             	pool.releaseConnection(pConn);
         }
         return 0;
+        
     }
+    
+    public String joinWaitingListAsGuest(int diners, String phone, String email) {
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            pConn.touch();
+            Connection conn = pConn.getConnection();
+
+            WaitingListDAO dao = new WaitingListDAO(conn);
+            return dao.joinAsGuest(diners, phone, email);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+
+    public boolean leaveWaitingListAsGuest(String confirmationCode) {
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            pConn.touch();
+            Connection conn = pConn.getConnection();
+
+            WaitingListDAO dao = new WaitingListDAO(conn);
+            return dao.leaveAsGuest(confirmationCode);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+
 
 }
 

@@ -91,9 +91,20 @@ public class GuestMainController {
 
     @FXML
     private void showWaitingList() {
-        if (sectionTitle != null) sectionTitle.setText("Waiting List");
-        contentArea.getChildren().setAll(new Label("Waiting list (restaurant only)"));
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/WaitingListGuestView.fxml"));
+            Parent view = loader.load();
+
+            WaitingListGuestController controller = loader.getController();
+            controller.init(client); // או setClient(client) לפי איך את בונה
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 
     @FXML
     private void showPayment() {

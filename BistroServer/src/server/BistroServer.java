@@ -15,6 +15,7 @@ import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import server.dao.MySQLUserDAO;
 import server.dao.TableDAO;
+import server.dao.WaitingListDAO;
 import servergui.ServerMainController;
 
 public class BistroServer extends AbstractServer {
@@ -196,6 +197,62 @@ public class BistroServer extends AbstractServer {
                         break;
                     }
 
+                    case ClientRequest.CMD_JOIN_WAITING_LIST: {
+                        int userId = Integer.parseInt(params[0].toString());
+                        int diners = Integer.parseInt(params[1].toString());
+
+                        String phone = (params.length >= 3 && params[2] != null) ? params[2].toString().trim() : "";
+                        String email = (params.length >= 4 && params[3] != null) ? params[3].toString().trim() : "";
+
+                        String code = db.joinWaitingListAsSubscriber(userId, diners, phone, email);
+
+                        if (code != null && !code.isBlank())
+                            client.sendToClient("WAITING_JOIN_OK|" + code);
+                        else
+                            client.sendToClient("WAITING_JOIN_FAIL|DB error");
+
+                        break;
+                    }
+
+
+
+                    case ClientRequest.CMD_LEAVE_WAITING_LIST: {
+                        int userId = Integer.parseInt(params[0].toString());
+
+                        boolean ok = db.leaveWaitingListAsSubscriber(userId);
+
+                        if (ok) client.sendToClient("WAITING_LEAVE_OK|Removed from DB");
+                        else client.sendToClient("WAITING_LEAVE_FAIL|Not in waiting list");
+
+                        break;
+                    }
+
+                    case ClientRequest.CMD_JOIN_WAITING_LIST_GUEST: {
+                        int diners = Integer.parseInt(params[0].toString());
+                        String phone = (params.length >= 2 && params[1] != null) ? params[1].toString().trim() : "";
+                        String email = (params.length >= 3 && params[2] != null) ? params[2].toString().trim() : "";
+
+                        String code = db.joinWaitingListAsGuest(diners, phone, email);
+
+                        if (code != null && !code.isBlank())
+                            client.sendToClient("WAITING_GUEST_JOIN_OK|" + code);
+                        else
+                            client.sendToClient("WAITING_GUEST_JOIN_FAIL|DB error");
+
+                        break;
+                    }
+
+                    case ClientRequest.CMD_LEAVE_WAITING_LIST_GUEST: {
+                        String code = (params[0] == null) ? "" : params[0].toString().trim();
+
+                        boolean ok = db.leaveWaitingListAsGuest(code);
+
+                        if (ok) client.sendToClient("WAITING_GUEST_LEAVE_OK|Removed from DB");
+                        else client.sendToClient("WAITING_GUEST_LEAVE_FAIL|Not in waiting list");
+
+                        break;
+                    }
+
 
 
 
@@ -230,6 +287,7 @@ public class BistroServer extends AbstractServer {
                         tableDAO.deleteTable(tableNumber);
                         client.sendToClient("✅ Table deleted");
                         client.sendToClient(tableDAO.getAllTables());
+                        
                     }
                     
                     case "ADD_SUBSCRIBER": {

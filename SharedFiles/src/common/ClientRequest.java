@@ -8,8 +8,12 @@ public class ClientRequest implements Serializable {
 	    public static final String CMD_GET_AVAILABLE_SLOTS = "GET_AVAILABLE_SLOTS";
 	    public static final String CMD_CREATE_RESERVATION  = "CREATE_RESERVATION";
 	    public static final String CMD_CANCEL_RESERVATION  = "CANCEL_RESERVATION";
-	  
+	    public static final String CMD_JOIN_WAITING_LIST = "JOIN_WAITING_LIST";
+	    public static final String CMD_JOIN_WAITING_LIST_GUEST = "JOIN_WAITING_LIST_GUEST";
+	    public static final String CMD_LEAVE_WAITING_LIST_GUEST = "LEAVE_WAITING_LIST_GUEST";
+
 	    public static final String CMD_GET_WAITING_LIST         = "GET_WAITING_LIST";
+	    public static final String CMD_LEAVE_WAITING_LIST = "LEAVE_WAITING_LIST";
 
 	    public static final String CMD_GET_OPENING_HOURS        = "GET_OPENING_HOURS";
 	    public static final String CMD_UPDATE_OPENING_HOURS     = "UPDATE_OPENING_HOURS";

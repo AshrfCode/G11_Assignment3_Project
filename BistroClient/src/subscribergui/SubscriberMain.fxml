@@ -35,11 +35,10 @@
             <Button text="View History"
                     onAction="#showHistory"
                     styleClass="nav-btn"/>
-                    
+
             <Button text="Cancel Reservation"
                     onAction="#showCancelReservation"
                     styleClass="nav-btn"/>
-                    
         </VBox>
 
         <Region VBox.vgrow="ALWAYS"/>
@@ -57,15 +56,21 @@
                   alignment="CENTER_LEFT"
                   spacing="10">
 
+                <!-- ✅ ברירת מחדל כדי שלא יהיה ריק בהתחלה -->
                 <Label fx:id="sectionTitle"
+                       text="Welcome"
                        styleClass="header-title"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
 
+                <!-- ✅ ברירת מחדל (רשות) -->
                 <Label fx:id="modeBadge"
+                       text=""
                        styleClass="mode-badge"/>
 
+                <!-- ✅ ברירת מחדל (רשות) -->
                 <Label fx:id="heyUserLabel"
+                       text=""
                        styleClass="hey-user"/>
             </HBox>
         </top>

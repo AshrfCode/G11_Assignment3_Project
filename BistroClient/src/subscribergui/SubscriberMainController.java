@@ -12,6 +12,8 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+import java.net.URL;
+
 public class SubscriberMainController {
 
     public enum EntryMode { HOME, RESTAURANT }
@@ -32,7 +34,6 @@ public class SubscriberMainController {
 
     @FXML
     public void initialize() {
-        // Don't load pages here (client can still be null)
         applyModeUI();
         setUsername(username);
     }
@@ -51,10 +52,9 @@ public class SubscriberMainController {
         setUsername(username);
         applyModeUI();
 
-        showReservation(); // safe now
+        showReservation();
     }
 
-    // Keep for stub usage
     public void setEntryMode(EntryMode mode) {
         this.entryMode = mode;
         applyModeUI();
@@ -83,17 +83,15 @@ public class SubscriberMainController {
     @FXML
     private void showReservation() {
         setSection("Make Reservation");
-
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/ReservationView.fxml"));
             Parent view = loader.load();
 
             ReservationController controller = loader.getController();
-            controller.setClient(client); // inject client
-            controller.setSubscriberInfo(subscriberId, subscriberEmail, subscriberPhone); // auto-fill + lock
+            controller.setClient(client);
+            controller.setSubscriberInfo(subscriberId, subscriberEmail, subscriberPhone);
 
             contentArea.getChildren().setAll(view);
-
         } catch (Exception e) {
             e.printStackTrace();
             setPlaceholder("❌ Failed to load reservation screen (Subscriber).");
@@ -103,36 +101,44 @@ public class SubscriberMainController {
     @FXML
     private void showCancelReservation() {
         setSection("Cancel Reservation");
-
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/CancelReservationView.fxml"));
             Parent view = loader.load();
 
             CancelReservationController controller = loader.getController();
             controller.setClient(client);
-
-            // ✅ THIS is what prevents subscriber B from canceling subscriber A
             controller.setSubscriberInfo(subscriberId, subscriberEmail, subscriberPhone);
 
             contentArea.getChildren().setAll(view);
-
         } catch (Exception e) {
             e.printStackTrace();
             setPlaceholder("❌ Failed to load cancel reservation screen.");
         }
     }
 
-    
     @FXML
     private void showWaitingList() {
         setSection("Waiting List");
-        setPlaceholder("Waiting list screen (Subscriber) – only in Restaurant Mode.");
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("WaitingList.fxml"));
+            Parent view = loader.load();
+
+            WaitingListController controller = loader.getController();
+            controller.init(client, subscriberId);
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setPlaceholder("❌ Failed to load waiting list screen.");
+        }
     }
+
 
     @FXML
     private void showPayment() {
         setSection("Pay");
-
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/PaymentView.fxml"));
             Parent view = loader.load();
@@ -141,13 +147,11 @@ public class SubscriberMainController {
             controller.setClient(client);
 
             contentArea.getChildren().setAll(view);
-
         } catch (Exception e) {
             e.printStackTrace();
             setPlaceholder("❌ Failed to load payment screen.");
         }
     }
-
 
     @FXML
     private void showUpdateDetails() {
@@ -158,22 +162,19 @@ public class SubscriberMainController {
     @FXML
     private void showHistory() {
         setSection("View History");
-
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/subscribergui/HistoryView.fxml"));
             Parent view = loader.load();
 
             HistoryController controller = loader.getController();
-            controller.init(client, subscriberId); // pass needed data
+            controller.init(client, subscriberId);
 
             contentArea.getChildren().setAll(view);
-
         } catch (Exception e) {
             e.printStackTrace();
             setPlaceholder("❌ Failed to load history screen.");
         }
     }
-
 
     @FXML
     private void handleLogout() {

@@ -26,30 +26,22 @@ public class ClientController extends AbstractClient {
     @Override
     protected void handleMessageFromServer(Object msg) {
 
-        // ✅ Forward to active screen handler FIRST
+        // ✅ קודם כל למסך הפעיל
         if (ClientSession.activeHandler != null) {
             ClientSession.activeHandler.accept(msg);
         }
 
-        // -------------------------
-        // Simple string messages
-        // -------------------------
+        // ואז UI כללי
         if (msg instanceof String) {
             ui.display((String) msg);
             return;
         }
 
-        // -------------------------
-        // ReservationResponse
-        // -------------------------
         if (msg instanceof ReservationResponse res) {
             ui.display(res.getMessage());
             return;
         }
 
-        // -------------------------
-        // Lists from server (generic handling only)
-        // -------------------------
         if (msg instanceof List<?>) {
             List<?> list = (List<?>) msg;
 
@@ -72,24 +64,13 @@ public class ClientController extends AbstractClient {
                 return;
             }
 
-            // ⛔ Tables are handled ONLY by activeHandler (GUI)
             return;
         }
-        
+
         if (msg instanceof common.SubscriberHistoryResponse) {
-            // it's handled by activeHandler already
-            return;
-        }
-        
-        if (ClientSession.activeHandler != null) {
-            ClientSession.activeHandler.accept(msg);
-            return;
+            return; // activeHandler מטפל
         }
 
-
-        // -------------------------
-        // Fallback
-        // -------------------------
         System.err.println("⚠️ Unrecognized message from server: " + msg);
         ui.display("⚠️ Unrecognized message from server.");
     }
@@ -152,4 +133,23 @@ public class ClientController extends AbstractClient {
     protected void connectionClosed() {
         ui.display("🔌 Client disconnected from server.");
     }
+    
+    public void joinWaitingListAsSubscriber(int subscriberId, int diners, String phone, String email) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_JOIN_WAITING_LIST,
+                new Object[]{subscriberId, diners, phone, email}));
+    }
+
+    public void joinWaitingListAsGuest(int diners, String phone, String email) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_JOIN_WAITING_LIST_GUEST,
+                new Object[]{diners, phone, email}));
+    }
+    
+    
+
+    public void leaveWaitingListAsGuest(String confirmationCode) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_LEAVE_WAITING_LIST_GUEST,
+                new Object[]{confirmationCode}));
+    }
+
+
 }
