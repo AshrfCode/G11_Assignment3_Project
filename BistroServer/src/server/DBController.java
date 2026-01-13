@@ -1223,6 +1223,7 @@ public class DBController {
             pConn.touch();
             Connection conn = pConn.getConnection();
 
+            
             WaitingListDAO dao = new WaitingListDAO(conn);
             return dao.leaveAsGuest(confirmationCode);
 

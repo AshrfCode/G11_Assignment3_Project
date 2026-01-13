@@ -42,7 +42,8 @@ public class WaitingListController {
                     if (isValidWaitingCode(code)) {
                         lblStatus.setText("Successfully added to waiting list. Code: " + code);
                     } else {
-                        // אם השרת שלח משהו אחר (כמו "Inserted to DB") נדע מיד
+               
+                    	// אם השרת שלח משהו אחר (כמו "Inserted to DB") נדע מיד
                         lblStatus.setText("Successfully added to waiting list. (Missing/invalid code: " + code + ")");
                     }
                     lblStatus.setStyle("-fx-text-fill: #1B8F3A; -fx-font-weight: bold;");

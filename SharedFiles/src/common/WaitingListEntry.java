@@ -6,6 +6,7 @@ import java.sql.Timestamp;
 public class WaitingListEntry implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    
     private final int id;
     private final Timestamp requestTime;
     private final String subscriberNumber;

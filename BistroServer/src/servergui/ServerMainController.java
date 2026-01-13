@@ -37,6 +37,7 @@ public class ServerMainController {
         dbUserField.setText("root");
         dbPassField.setText("Aa123456");
         serverPortField.setText("5555");
+        
 
         ipColumn.setCellValueFactory(new PropertyValueFactory<>("ip"));
         hostColumn.setCellValueFactory(new PropertyValueFactory<>("host"));

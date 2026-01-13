@@ -12,6 +12,7 @@
           styleClass="sidebar"
           spacing="20">
 
+
         <Label text="BISTRO" styleClass="logo"/>
 
         <VBox spacing="10">

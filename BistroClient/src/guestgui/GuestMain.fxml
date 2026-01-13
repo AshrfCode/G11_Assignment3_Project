@@ -24,6 +24,7 @@
                     onAction="#showWaitingList"
                     styleClass="nav-btn"/>
 
+
             <Button text="Pay"
                     onAction="#showPayment"
                     styleClass="nav-btn"/>

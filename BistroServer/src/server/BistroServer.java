@@ -224,6 +224,7 @@ public class BistroServer extends AbstractServer {
                         if (ok) client.sendToClient("WAITING_LEAVE_OK|Removed from DB");
                         else client.sendToClient("WAITING_LEAVE_FAIL|Not in waiting list");
 
+                        
                         break;
                     }
 

@@ -134,6 +134,7 @@ public class ClientController extends AbstractClient {
         ui.display("🔌 Client disconnected from server.");
     }
     
+    
     public void joinWaitingListAsSubscriber(int subscriberId, int diners, String phone, String email) {
         sendRequest(new ClientRequest(ClientRequest.CMD_JOIN_WAITING_LIST,
                 new Object[]{subscriberId, diners, phone, email}));

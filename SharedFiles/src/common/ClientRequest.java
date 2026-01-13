@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 public class ClientRequest implements Serializable {
 
+	
 	    // Added reusable command constants for the reservation flow (to avoid typos in command strings).
 	    public static final String CMD_GET_AVAILABLE_SLOTS = "GET_AVAILABLE_SLOTS";
 	    public static final String CMD_CREATE_RESERVATION  = "CREATE_RESERVATION";

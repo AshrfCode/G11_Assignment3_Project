@@ -10,6 +10,7 @@ public class WaitingList implements Serializable {
 
     private Queue<String> guestsQueue = new LinkedList<>();
 
+    
     public WaitingList() {}
 
     public Queue<String> getGuestsQueue() {

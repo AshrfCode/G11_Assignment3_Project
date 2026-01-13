@@ -105,6 +105,7 @@ public class WaitingListDAO {
         return null;
     }
 
+    
     public boolean leaveAsGuest(String confirmationCode) throws SQLException {
         String code = (confirmationCode == null) ? "" : confirmationCode.trim();
         if (code.isEmpty()) return false;

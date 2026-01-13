@@ -193,6 +193,7 @@ public class SubscriberMainController {
             e.printStackTrace();
         }
     }
+    
 
     // ---------------- HELPERS ----------------
 

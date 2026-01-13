@@ -103,6 +103,7 @@ public class WaitingListGuestController {
         lblStatus.setText(msg);
         lblStatus.setStyle("-fx-text-fill: #666666;");
     }
+    
 
     private void showError(String msg) {
         lblStatus.setText(msg);

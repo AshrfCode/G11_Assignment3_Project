@@ -95,6 +95,7 @@ public class GuestMainController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/WaitingListGuestView.fxml"));
             Parent view = loader.load();
 
+            
             WaitingListGuestController controller = loader.getController();
             controller.init(client); // או setClient(client) לפי איך את בונה
 
