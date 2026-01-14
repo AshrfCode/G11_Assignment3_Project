@@ -67,7 +67,8 @@ public class BistroMainController implements ChatIF {
                 switch (role) {
                     case "SUBSCRIBER" -> openSubscriberView(username, userId, email, phone);
                     case "REPRESENTATIVE" -> openRepresentativeView(username);
-
+                    case "MANAGER" -> openManagerView(username, role);
+                    
                     default -> statusLabel.setText("Unknown role");
                 }
             }
@@ -235,6 +236,44 @@ public class BistroMainController implements ChatIF {
             }
 
             controller.setUsername(username);
+            controller.setClient(client);
+            Stage stage = (Stage) txtUsername.getScene().getWindow();
+            Scene scene = new Scene(root, 1000, 700);
+            stage.setScene(scene);
+
+            stage.centerOnScreen();
+            stage.setMinWidth(900);
+            stage.setMinHeight(600);
+            stage.setTitle("Bistro – Representative");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            statusLabel.setText("Failed to open Representative view.");
+        }
+    }
+    
+    private void openManagerView(String username, String role) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/representativegui/RepresentativeMain.fxml")
+            );
+
+            Parent root = loader.load();
+            representativegui.representativeMainController controller =
+                    loader.getController();
+
+            if (toggleHome.isSelected()) {
+                controller.setEntryMode(
+                    representativegui.representativeMainController.EntryMode.HOME
+                );
+            } else {
+                controller.setEntryMode(
+                    representativegui.representativeMainController.EntryMode.RESTAURANT
+                );
+            }
+
+            controller.setUsername(username);
+            controller.setRole(common.UserRole.valueOf(role));
             controller.setClient(client);
             Stage stage = (Stage) txtUsername.getScene().getWindow();
             Scene scene = new Scene(root, 1000, 700);

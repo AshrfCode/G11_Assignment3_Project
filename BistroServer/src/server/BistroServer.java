@@ -419,12 +419,16 @@ public class BistroServer extends AbstractServer {
     }
 
     /* =========================
-       AUTHORIZATION
-       ========================= */
-    private boolean isRepresentative(ConnectionToClient client) {
-        String[] info = clientInfoMap.get(client);
-        return info != null && "REPRESENTATIVE".equals(info[0]);
-    }
+    AUTHORIZATION
+    ========================= */
+	 private boolean isRepresentative(ConnectionToClient client) {
+	     String[] info = clientInfoMap.get(client);
+	     if (info == null) return false;
+	
+	     String role = info[0];
+	     return "REPRESENTATIVE".equals(role) || "MANAGER".equals(role);
+	 }
+
 
     /* =========================
        CLIENT CONNECT / DISCONNECT
