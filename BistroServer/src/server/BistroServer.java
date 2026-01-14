@@ -14,8 +14,8 @@ import entities.User;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import server.dao.MySQLUserDAO;
+import server.dao.ReservationDAO;
 import server.dao.TableDAO;
-import server.dao.WaitingListDAO;
 import servergui.ServerMainController;
 
 public class BistroServer extends AbstractServer {
@@ -23,6 +23,7 @@ public class BistroServer extends AbstractServer {
     private Map<ConnectionToClient, String[]> clientInfoMap = new ConcurrentHashMap<>();
     private DBController db = new DBController();
     private TableDAO tableDAO = new TableDAO();
+    private ReservationDAO reservationDAO = new ReservationDAO();
 
     private ServerMainController guiController;
 
@@ -390,7 +391,15 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(result);
                         break;
                     }
-
+                    
+                    //Check In
+                    case ClientRequest.CMD_CHECK_IN: {
+                        String code = params[0].toString();
+                        // This calls the DAO method we wrote in the previous step
+                        Object result = reservationDAO.checkInCustomer(code);
+                        client.sendToClient(result);
+                        break;
+                    }
                       
                     case "DISCONNECT":
                         client.close();

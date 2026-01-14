@@ -125,6 +125,26 @@ public class GuestMainController {
             contentArea.getChildren().setAll(new Label("❌ Failed to load payment screen."));
         }
     }
+    
+    @FXML
+    private void checkIn() {
+        if (sectionTitle != null) sectionTitle.setText("Check In");
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/CheckInView.fxml"));
+            Parent view = loader.load();
+
+            CheckInController controller = loader.getController();
+            controller.setClient(client); // Inject client
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            contentArea.getChildren().setAll(new Label("❌ Failed to load check-in screen."));
+        }
+    }
+    
     @FXML
     private void handleBack() {
         try {

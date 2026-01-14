@@ -912,7 +912,7 @@ public class DBController {
                     }
                 }
 
-                if (!"ACTIVE".equalsIgnoreCase(status)) {
+                if (!"CHECKED_IN".equalsIgnoreCase(status)) {
                     conn.rollback();
                     return "PAY_FAIL|Reservation is not ACTIVE (already paid/canceled)";
                 }
@@ -965,7 +965,7 @@ public class DBController {
                 // update reservation status -> COMPLETED (table becomes free)
                 String updateSql =
                         "UPDATE `Reservations` SET status='COMPLETED' " +
-                        "WHERE reservation_id=? AND status='ACTIVE'";
+                        "WHERE reservation_id=? AND status='CHECKED_IN'";
 
                 try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                     ps.setInt(1, reservationId);
@@ -1040,8 +1040,8 @@ public class DBController {
                 }
             }
 
-            // must be ACTIVE to pay
-            if (!"ACTIVE".equalsIgnoreCase(status)) {
+            // must be CHECKED_IN to pay
+            if (!"CHECKED_IN".equalsIgnoreCase(status)) {
                 return "PREVIEW_FAIL|Reservation is not ACTIVE (already paid/canceled)";
             }
 

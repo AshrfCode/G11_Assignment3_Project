@@ -1,103 +1,78 @@
 package entities;
 
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.sql.Timestamp;
 
 public class Reservation implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private int id; // DB primary key (optional but recommended)
-
-    private LocalDate reserveDate;
-    private LocalTime reserveTime;
+    private int reservationId; 
     private int dinnersNumber;
-    private String reservationCode;
-    private String reservationStatus; // ACTIVE / INACTIVE
-
+    private String confirmationCode; // Matches DB 'confirmation_code'
+    private String status;           // ACTIVE, CANCELED, CHECKED_IN
+    
     // 🔗 Relations
-    private String subscriberNumber;   // e.g. SUB123
-    private Integer tableNumber;       // nullable
+    private String subscriberNumber;
+    private int tableNumber;
+    
+    // 🕒 Time fields (Matching DB 'datetime' columns)
+    private Timestamp startTime;
+    private Timestamp endTime;
+    private Timestamp checkInTime; // New field for the Check-In logic
+    
+    // Contact info (from your DB screenshots)
+    private String phone;
+    private String email;
 
     public Reservation() {}
 
-    public Reservation(LocalDate reserveDate, LocalTime reserveTime,
-                       int dinnersNumber, String reservationCode,
-                       String reservationStatus,
-                       String subscriberNumber, Integer tableNumber) {
-        this.reserveDate = reserveDate;
-        this.reserveTime = reserveTime;
+    // Constructor with main fields
+    public Reservation(int reservationId, int dinnersNumber, String confirmationCode, 
+                       String status, String subscriberNumber, int tableNumber, 
+                       Timestamp startTime, Timestamp endTime) {
+        this.reservationId = reservationId;
         this.dinnersNumber = dinnersNumber;
-        this.reservationCode = reservationCode;
-        this.reservationStatus = reservationStatus;
+        this.confirmationCode = confirmationCode;
+        this.status = status;
         this.subscriberNumber = subscriberNumber;
         this.tableNumber = tableNumber;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
     // ---------- Getters & Setters ----------
 
-    public int getId() {
-        return id;
-    }
+    public int getReservationId() { return reservationId; }
+    public void setReservationId(int reservationId) { this.reservationId = reservationId; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public int getDinnersNumber() { return dinnersNumber; }
+    public void setDinnersNumber(int dinnersNumber) { this.dinnersNumber = dinnersNumber; }
 
-    public LocalDate getReserveDate() {
-        return reserveDate;
-    }
+    public String getConfirmationCode() { return confirmationCode; }
+    public void setConfirmationCode(String confirmationCode) { this.confirmationCode = confirmationCode; }
 
-    public void setReserveDate(LocalDate reserveDate) {
-        this.reserveDate = reserveDate;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public LocalTime getReserveTime() {
-        return reserveTime;
-    }
+    public String getSubscriberNumber() { return subscriberNumber; }
+    public void setSubscriberNumber(String subscriberNumber) { this.subscriberNumber = subscriberNumber; }
 
-    public void setReserveTime(LocalTime reserveTime) {
-        this.reserveTime = reserveTime;
-    }
+    public int getTableNumber() { return tableNumber; }
+    public void setTableNumber(int tableNumber) { this.tableNumber = tableNumber; }
 
-    public int getDinnersNumber() {
-        return dinnersNumber;
-    }
+    public Timestamp getStartTime() { return startTime; }
+    public void setStartTime(Timestamp startTime) { this.startTime = startTime; }
 
-    public void setDinnersNumber(int dinnersNumber) {
-        this.dinnersNumber = dinnersNumber;
-    }
+    public Timestamp getEndTime() { return endTime; }
+    public void setEndTime(Timestamp endTime) { this.endTime = endTime; }
 
-    public String getReservationCode() {
-        return reservationCode;
-    }
+    public Timestamp getCheckInTime() { return checkInTime; }
+    public void setCheckInTime(Timestamp checkInTime) { this.checkInTime = checkInTime; }
 
-    public void setReservationCode(String reservationCode) {
-        this.reservationCode = reservationCode;
-    }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
-    public String getReservationStatus() {
-        return reservationStatus;
-    }
-
-    public void setReservationStatus(String reservationStatus) {
-        this.reservationStatus = reservationStatus;
-    }
-
-    public String getSubscriberNumber() {
-        return subscriberNumber;
-    }
-
-    public void setSubscriberNumber(String subscriberNumber) {
-        this.subscriberNumber = subscriberNumber;
-    }
-
-    public Integer getTableNumber() {
-        return tableNumber;
-    }
-
-    public void setTableNumber(Integer tableNumber) {
-        this.tableNumber = tableNumber;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

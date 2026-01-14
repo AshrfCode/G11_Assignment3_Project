@@ -41,6 +41,12 @@ public class ClientController extends AbstractClient {
             ui.display(res.getMessage());
             return;
         }
+        
+        if (msg instanceof Integer) {
+            int tableNum = (Integer) msg;
+            ui.display("✅ Check-in Successful! Please proceed to Table #" + tableNum);
+            return;
+        }
 
         if (msg instanceof List<?>) {
             List<?> list = (List<?>) msg;
@@ -119,6 +125,11 @@ public class ClientController extends AbstractClient {
     	sendRequest(new ClientRequest(ClientRequest.CMD_GET_SUBSCRIBER_HISTORY,
             new Object[] { subscriberId }
         ));
+    }
+    
+    public void checkInCustomer(String confirmationCode) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_CHECK_IN, 
+                new Object[]{confirmationCode}));
     }
 
     public void closeConnectionSafely() {

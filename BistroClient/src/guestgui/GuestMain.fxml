@@ -23,6 +23,11 @@
                     fx:id="waitingListBtn"
                     onAction="#showWaitingList"
                     styleClass="nav-btn"/>
+                    
+            
+            <Button text="Check In"
+                    onAction="#checkIn"
+                    styleClass="nav-btn"/>        
 
 
             <Button text="Pay"
