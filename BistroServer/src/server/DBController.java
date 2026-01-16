@@ -14,9 +14,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import common.ManageOrderEntry;
 import common.ReservationHistoryRow;
+import common.WaitingListEntry;
 import server.dao.WaitingListDAO;
 
 public class DBController {
@@ -669,37 +673,95 @@ public class DBController {
         }
     }
     
-    
+ // Change return type from List<String> to List<WaitingListEntry>
+    public List<WaitingListEntry> getWaitingList() {
+        List<WaitingListEntry> result = new ArrayList<>();
 
-    public List<String> getWaitingList() {
-        List<String> result = new ArrayList<>();
-
-        String sql =
-            "SELECT wl.id, wl.request_time, wl.subscriber_number, u.name, u.phone " +
+        String sql = 
+            "SELECT " +
+            "  wl.id, " +
+            "  wl.request_time, " +
+            "  wl.subscriber_number, " + // keep raw for object
+            "  COALESCE(wl.subscriber_number, 'Guest') AS identifier, " + 
+            "  COALESCE(u.name, 'Guest') AS name, " + 
+            "  COALESCE(u.phone, wl.guest_phone) AS phone " + 
             "FROM waiting_list wl " +
-            "JOIN subscribers s ON wl.subscriber_number = s.subscriber_number " +
-            "JOIN users u ON s.user_id = u.id " +
+            "LEFT JOIN subscribers s ON wl.subscriber_number = s.subscriber_number " +
+            "LEFT JOIN users u ON s.user_id = u.id " +
             "ORDER BY wl.request_time";
 
-        try (Connection conn = pool.getConnection().getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        PooledConnection pConn = null;
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+            
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
 
-            while (rs.next()) {
-                result.add(
-                    "#" + rs.getInt("id") +
-                    " | " + rs.getString("subscriber_number") +
-                    " | " + rs.getString("name") +
-                    " | " + rs.getString("phone") +
-                    " | " + rs.getTimestamp("request_time")
-                );
+                while (rs.next()) {
+                    // Determine type
+                    String subNum = rs.getString("subscriber_number");
+                    String type = (subNum == null || subNum.isEmpty()) ? "Guest" : "Subscriber";
+
+                    // ✅ Create the Object directly
+                    result.add(new WaitingListEntry(
+                        rs.getInt("id"),
+                        rs.getTimestamp("request_time"),
+                        subNum,
+                        rs.getString("name"),
+                        rs.getString("phone"),
+                        type
+                    ));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            result.clear();
-            result.add("❌ DB error: " + e.getMessage());
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
         }
 
+        return result;
+    }
+    
+ // Method to get ALL reservations (History + Future)
+    public List<ManageOrderEntry> getAllReservations() {
+        List<ManageOrderEntry> result = new ArrayList<>();
+        
+        // ✅ Logic: Removed "WHERE DATE = CURDATE()"
+        // ✅ Added "ORDER BY start_time DESC" to show newest/upcoming first
+        String sql = 
+            "SELECT r.reservation_id, r.start_time, r.dinners_number, r.table_number, r.status, r.phone, " +
+            "  COALESCE(u.name, 'Guest') AS customer_name " +
+            "FROM reservations r " +
+            "LEFT JOIN subscribers s ON r.subscriber_number = s.subscriber_number " +
+            "LEFT JOIN users u ON s.user_id = u.id " +
+            "ORDER BY r.start_time DESC"; // Newest at the top
+
+        PooledConnection pConn = null;
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+                    result.add(new ManageOrderEntry(
+                        rs.getInt("reservation_id"),
+                        rs.getString("customer_name"),
+                        rs.getString("phone"),
+                        rs.getTimestamp("start_time"),
+                        rs.getInt("dinners_number"),
+                        rs.getInt("table_number"),
+                        rs.getString("status")
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
         return result;
     }
 
@@ -1352,9 +1414,188 @@ public class DBController {
             if (pConn != null) pool.releaseConnection(pConn);
         }
     }
+    
+    public Map<String, Integer> generateMonthlyTimeReport(int month, int year) {
+        Map<String, Integer> stats = new HashMap<>();
+        stats.put("Normal", 0);
+        stats.put("Delayed", 0);
+        stats.put("Extended", 0);
 
+        String sql = "SELECT start_time, check_in_time, end_time FROM reservations " +
+                     "WHERE status = 'COMPLETED' " +
+                     "AND MONTH(start_time) = ? AND YEAR(start_time) = ?";
 
+        PooledConnection pConn = null;
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
 
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, month);
+                stmt.setInt(2, year);
+
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        Timestamp start = rs.getTimestamp("start_time");
+                        Timestamp checkIn = rs.getTimestamp("check_in_time");
+                        Timestamp end = rs.getTimestamp("end_time");
+
+                        if (checkIn == null || end == null) continue;
+
+                        long plannedTime = start.getTime();
+                        long arrivalTime = checkIn.getTime();
+                        long leaveTime = end.getTime();
+
+                        long durationMinutes = (leaveTime - arrivalTime) / (60 * 1000);
+                        long delayMinutes = (arrivalTime - plannedTime) / (60 * 1000);
+
+                        if (durationMinutes > 120) {
+                            stats.put("Extended", stats.get("Extended") + 1);
+                        } else if (delayMinutes > 0 && delayMinutes < 15) {
+                            stats.put("Delayed", stats.get("Delayed") + 1);
+                        } else {
+                            stats.put("Normal", stats.get("Normal") + 1);
+                        }
+                    }
+                }
+            }
+            
+            // Call the helper method (now also non-static)
+            saveTimeReportToDB(month, year, stats);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+
+        return stats;
+    }
+
+    private void saveTimeReportToDB(int month, int year, Map<String, Integer> stats) {
+        String sql = "INSERT INTO monthly_time_report (report_year, report_month, total_normal, total_delayed, total_extended, generated_date) " +
+                     "VALUES (?, ?, ?, ?, ?, NOW()) " +
+                     "ON DUPLICATE KEY UPDATE " +
+                     "total_normal = VALUES(total_normal), " +
+                     "total_delayed = VALUES(total_delayed), " +
+                     "total_extended = VALUES(total_extended), " +
+                     "generated_date = NOW()";
+
+        PooledConnection pConn = null;
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, year);
+                stmt.setInt(2, month);
+                stmt.setInt(3, stats.get("Normal"));
+                stmt.setInt(4, stats.get("Delayed"));
+                stmt.setInt(5, stats.get("Extended"));
+
+                stmt.executeUpdate();
+                System.out.println("Report saved/updated for " + month + "/" + year);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+    
+    public Map<String, Integer> generateMonthlySubscriberReport(int month, int year) {
+        Map<String, Integer> stats = new HashMap<>();
+        stats.put("Orders", 0);
+        stats.put("WaitingList", 0);
+
+        PooledConnection pConn = null;
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            // ---------------------------------------------------------
+            // 1. COUNT SUBSCRIBER ORDERS (From 'reservations')
+            // ---------------------------------------------------------
+            String sqlOrders = "SELECT COUNT(*) AS count FROM reservations " +
+                               "WHERE status = 'COMPLETED' " +
+                               "AND subscriber_number IS NOT NULL " +
+                               "AND subscriber_number != '' " +       // Ensure not empty string
+                               "AND MONTH(start_time) = ? AND YEAR(start_time) = ?";
+
+            try (PreparedStatement stmt = conn.prepareStatement(sqlOrders)) {
+                stmt.setInt(1, month);
+                stmt.setInt(2, year);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        stats.put("Orders", rs.getInt("count"));
+                    }
+                }
+            }
+
+            // ---------------------------------------------------------
+            // 2. COUNT SUBSCRIBER WAITING LIST (From 'waiting_list')
+            // ---------------------------------------------------------
+            // Using the 'request_time' column from your image
+            String sqlWait = "SELECT COUNT(*) AS count FROM waiting_list " +
+                             "WHERE subscriber_number IS NOT NULL " +
+                             "AND subscriber_number != '' " +
+                             "AND MONTH(request_time) = ? AND YEAR(request_time) = ?";
+
+            try (PreparedStatement stmt = conn.prepareStatement(sqlWait)) {
+                stmt.setInt(1, month);
+                stmt.setInt(2, year);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        stats.put("WaitingList", rs.getInt("count"));
+                    }
+                }
+            }
+
+            // 3. SAVE REPORT TO DB
+            saveSubscriberReportToDB(month, year, stats);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+
+        return stats;
+    }
+    
+ // Helper method to save to the database
+    private void saveSubscriberReportToDB(int month, int year, Map<String, Integer> stats) {
+        String sql = "INSERT INTO monthly_subscriber_report (report_year, report_month, subscriber_orders, subscriber_waiting_list, generated_date) " +
+                     "VALUES (?, ?, ?, ?, NOW()) " +
+                     "ON DUPLICATE KEY UPDATE " +
+                     "subscriber_orders = VALUES(subscriber_orders), " +
+                     "subscriber_waiting_list = VALUES(subscriber_waiting_list), " +
+                     "generated_date = NOW()";
+
+        PooledConnection pConn = null;
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, year);
+                stmt.setInt(2, month);
+                stmt.setInt(3, stats.get("Orders"));
+                stmt.setInt(4, stats.get("WaitingList"));
+
+                stmt.executeUpdate();
+                System.out.println("Subscriber Report saved for " + month + "/" + year);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
 
 }
 

@@ -87,42 +87,35 @@ public class representativeMainController {
 
 
     @FXML
-    private void showReservations() {
-        setSection("Today's Reservations");
-
-        if (client == null) {
-            setPlaceholder("❌ No server connection (client is null).");
-            return;
-        }
-
-        setPlaceholder("Loading today's reservations...");
-
-        ListView<String> listView = new ListView<>();
-        contentArea.getChildren().setAll(listView);
-
-        ClientSession.activeHandler = (msg) -> {
-            if (msg instanceof List<?> list) {
-                Platform.runLater(() -> {
-                    listView.getItems().clear();
-
-                    if (list.isEmpty()) {
-                        listView.getItems().add("No reservations for today ✅");
-                        return;
-                    }
-
-                    if (list.get(0) instanceof String) {
-                        @SuppressWarnings("unchecked")
-                        List<String> items = (List<String>) list;
-                        listView.getItems().addAll(items);
-                    } else {
-                        listView.getItems().add("⚠️ Unexpected data from server.");
-                    }
-                });
-            }
-        };
-
-        client.sendRequest(new ClientRequest(ClientRequest.CMD_GET_TODAY_RESERVATIONS, new Object[]{}));
-    }
+	private void showReservations() {
+	    setSection("Manage Orders");
+	
+	    if (client == null) {
+	        setPlaceholder("❌ No server connection.");
+	        return;
+	    }
+	
+	    try {
+	        // 1. Load the new FXML
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/representativegui/ManageOrdersView.fxml"));
+	        Parent root = loader.load();
+	
+	        // 2. Get controller and pass client
+	        ManageOrdersController controller = loader.getController();
+	        controller.setClient(this.client);
+	        
+	        // 3. Trigger initial data load
+	        controller.start();
+	
+	        // 4. Show it
+	        contentArea.getChildren().clear();
+	        contentArea.getChildren().add(root);
+	
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        setPlaceholder("Error loading orders view.");
+	    }
+	}	
 
     
     private VBox buildSpecialOpeningPane() {
@@ -376,38 +369,30 @@ public class representativeMainController {
         setSection("Waiting List");
 
         if (client == null) {
-            setPlaceholder("❌ No server connection (client is null).");
+            setPlaceholder("❌ No server connection.");
             return;
         }
 
-        setPlaceholder("Loading waiting list...");
+        try {
+            // 1. Load the new clean FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/representativegui/WaitingListView.fxml"));
+            Parent root = loader.load();
 
-        ListView<String> listView = new ListView<>();
-        contentArea.getChildren().clear();
-        contentArea.getChildren().add(listView);
+            // 2. Get controller and pass client
+            WaitingListController controller = loader.getController();
+            controller.setClient(this.client);
+            
+            // 3. Trigger initial data load
+            controller.start();
 
-        ClientSession.activeHandler = (msg) -> {
-            if (msg instanceof List<?> list) {
-                Platform.runLater(() -> {
-                    listView.getItems().clear();
+            // 4. Show it
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
 
-                    if (list.isEmpty()) {
-                        listView.getItems().add("No one is currently waiting ✅");
-                        return;
-                    }
-
-                    if (list.get(0) instanceof String) {
-                        @SuppressWarnings("unchecked")
-                        List<String> items = (List<String>) list;
-                        listView.getItems().addAll(items);
-                    } else {
-                        listView.getItems().add("⚠️ Unexpected data from server.");
-                    }
-                });
-            }
-        };
-
-        client.sendRequest(new ClientRequest(ClientRequest.CMD_GET_WAITING_LIST, new Object[]{}));
+        } catch (Exception e) {
+            e.printStackTrace();
+            setPlaceholder("Error loading waiting list view.");
+        }
     }
 
 
@@ -426,7 +411,32 @@ public class representativeMainController {
     @FXML
     private void showVisualReports() {
         setSection("Visual Reports");
-        setPlaceholder("View visual restaurant activity reports.");
+
+        if (client == null) {
+            setPlaceholder("❌ No server connection.");
+            return;
+        }
+
+        try {
+            // 1. Load the Menu FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/representativegui/VisualReportsMenu.fxml"));
+            Parent root = loader.load();
+
+            // 2. Get the controller
+            VisualReportsMenuController menuController = loader.getController();
+            
+            // 3. Pass dependencies
+            menuController.setClient(this.client);
+            menuController.setMainContentArea(this.contentArea); // So the menu can load charts into the main view
+
+            // 4. Show the menu
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setPlaceholder("Error loading reports menu.");
+        }
     }
 
     @FXML
@@ -444,35 +454,45 @@ public class representativeMainController {
             return;
         }
 
-        ListView<String> listView = new ListView<>();
-        contentArea.getChildren().clear();
-        contentArea.getChildren().add(listView);
+        try {
+            // 1. Load the new FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/representativegui/TodaysReservations.fxml"));
+            Parent root = loader.load();
+            
+            // 2. Get the controller so we can pass data to it later
+            TodaysReservationsController tableController = loader.getController();
 
-        ClientSession.activeHandler = (msg) -> {
-            if (msg instanceof List<?> list) {
-                Platform.runLater(() -> {
-                    listView.getItems().clear();
-
-                    if (list.isEmpty()) {
-                        listView.getItems().add("No reservations today ✅");
-                        return;
+            // 3. Define what the refresh button does
+            Runnable fetchAction = () -> {
+                ClientSession.activeHandler = (msg) -> {
+                    if (msg instanceof List<?> list) {
+                        Platform.runLater(() -> {
+                            if (!list.isEmpty() && list.get(0) instanceof String) {
+                                 // Pass the raw strings to the table controller to parse
+                                tableController.updateTableData((List<String>) list);
+                            } else {
+                                // Handle empty or weird data
+                                tableController.updateTableData(List.of("No reservations today"));
+                            }
+                        });
                     }
+                };
+                // Send the request
+                client.sendRequest(new ClientRequest(ClientRequest.CMD_GET_TODAY_RESERVATIONS, new Object[]{}));
+            };
 
-                    if (list.get(0) instanceof String) {
-                        @SuppressWarnings("unchecked")
-                        List<String> items = (List<String>) list;
-                        listView.getItems().addAll(items);
-                    }
-                });
-            }
-        };
+            // 4. Set the refresh action and trigger it immediately
+            tableController.setRefreshAction(fetchAction);
+            fetchAction.run(); // Load data now
 
-        client.sendRequest(
-            new ClientRequest(
-                ClientRequest.CMD_GET_TODAY_RESERVATIONS,
-                new Object[]{}
-            )
-        );
+            // 5. Show the view
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setPlaceholder("Error loading reservations view.");
+        }
     }
 
     // =========================

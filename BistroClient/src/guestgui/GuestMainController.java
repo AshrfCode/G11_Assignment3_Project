@@ -138,7 +138,7 @@ public class GuestMainController {
         }
     }
 
-    // ✅ Make sure FXML button calls onAction="#showCheckIn"
+    
     @FXML
     private void showCheckIn() {
         ClientSession.activeHandler = null;
@@ -146,7 +146,7 @@ public class GuestMainController {
 
         try {
             // ✅ unified name to match subscriber version
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/CheckIn.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/CheckInView.fxml"));
             Parent view = loader.load();
 
             CheckInController controller = loader.getController();

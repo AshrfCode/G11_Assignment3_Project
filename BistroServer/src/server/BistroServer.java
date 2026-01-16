@@ -1,7 +1,6 @@
 package server;
 
 import java.io.IOException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,9 +17,6 @@ import server.dao.MySQLUserDAO;
 import server.dao.ReservationDAO;
 import server.dao.TableDAO;
 import servergui.ServerMainController;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
 
 
 
@@ -421,7 +417,35 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(result);
                         break;
                     }
-                      
+                    
+                    case ClientRequest.CMD_GET_MONTHLY_TIME_REPORT: {
+                        // 1. Parse parameters safely using toString() first, then parseInt
+                        int month = Integer.parseInt(params[0].toString());
+                        int year = Integer.parseInt(params[1].toString());
+
+                        // 2. Call the non-static method on your 'db' instance and send result
+                        client.sendToClient(
+                                db.generateMonthlyTimeReport(month, year)
+                        );
+                        break;
+                    }
+                    
+                    case ClientRequest.CMD_GET_ALL_RESERVATIONS: {
+                        // Call the new method we just wrote
+                        client.sendToClient(db.getAllReservations());
+                        break;
+                    }
+                    
+                    case ClientRequest.CMD_GET_SUBSCRIBER_REPORT: {
+                        int m = Integer.parseInt(params[0].toString());
+                        int y = Integer.parseInt(params[1].toString());
+
+                        client.sendToClient(
+                            db.generateMonthlySubscriberReport(m, y)
+                        );
+                        break;
+                    }
+                    
                     case "DISCONNECT":
                         client.close();
                         break;

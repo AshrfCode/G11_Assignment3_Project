@@ -2,6 +2,7 @@ package client;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import common.ChatIF;
 import common.ClientRequest;
@@ -41,6 +42,10 @@ public class ClientController extends AbstractClient {
 	    if (msg instanceof String) {
 	        ui.display((String) msg);
 	        return;
+	    }
+	    
+	    if (msg instanceof Map) {
+	        return; 
 	    }
 	
 	    if (msg instanceof ReservationResponse res) {
@@ -117,6 +122,17 @@ public class ClientController extends AbstractClient {
     public void cancelReservationAsSubscriber(String confirmationCode, int subscriberId, String email, String phone) {
         sendRequest(new ClientRequest(ClientRequest.CMD_CANCEL_RESERVATION,
                 new Object[]{confirmationCode, subscriberId, email, phone}));
+    }
+    
+    public void requestMonthlyTimeReport(String month, String year) {
+        // Sends [month, year] to the server
+        sendRequest(new ClientRequest(ClientRequest.CMD_GET_MONTHLY_TIME_REPORT,
+                new Object[]{ month, year }));
+    }
+    
+    public void requestSubscriberReport(String month, String year) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_GET_SUBSCRIBER_REPORT,
+                new Object[]{ month, year }));
     }
     
     public void payReservation(String confirmationCode) {
