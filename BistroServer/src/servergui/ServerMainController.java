@@ -1,6 +1,7 @@
 package servergui;
 
 import javafx.application.Platform;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.collections.*;
@@ -10,6 +11,9 @@ import server.MySQLConnectionPool;
 import server.PooledConnection;
 
 import java.net.InetAddress;
+import server.NotificationService;
+import server.GmailSmtpNotificationService;
+
 
 public class ServerMainController {
 
@@ -75,7 +79,27 @@ public class ServerMainController {
 
             // 3. Start server safely
             server = new BistroServer(serverPort, this);
+         // after you start the server:
             server.listen();
+
+            // ✅ TEMP TEST (delete after it works)
+            NotificationService notifier =
+                new GmailSmtpNotificationService(
+                    System.getenv("BISTRO_GMAIL_FROM"),
+                    System.getenv("BISTRO_GMAIL_APP_PASSWORD")
+                );
+            
+            System.out.println("=== EMAIL TEST START ===");
+            System.out.println("FROM=" + System.getenv("BISTRO_GMAIL_FROM"));
+            System.out.println("PASS_SET=" + (System.getenv("BISTRO_GMAIL_APP_PASSWORD") != null));
+
+            
+         /*  notifier.sendEmail(
+                "asadrezek123@gmail.com",
+                "Bistro Test Email",
+                "If you got this, Gmail SMTP works ✅"
+            );*/
+
 
             statusLabel.setText("🟢 Server started on port " + serverPort);
 

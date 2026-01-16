@@ -1,6 +1,7 @@
 package subscribergui;
 
 import client.ClientController;
+import client.ClientSession;
 import guestgui.CancelReservationController;
 import guestgui.ReservationController;
 import javafx.fxml.FXML;
@@ -23,6 +24,8 @@ public class SubscriberMainController {
     @FXML private Label heyUserLabel;
     @FXML private StackPane contentArea;
     @FXML private Button waitingListBtn;
+    @FXML private Button checkInBtn;
+
 
     private EntryMode entryMode = EntryMode.HOME;
     private String username = "Subscriber";
@@ -76,6 +79,12 @@ public class SubscriberMainController {
             waitingListBtn.setVisible(isRestaurant);
             waitingListBtn.setManaged(isRestaurant);
         }
+        
+     // ✅ NEW: Check In only in Restaurant Mode
+        if (checkInBtn != null) {
+            checkInBtn.setVisible(isRestaurant);
+            checkInBtn.setManaged(isRestaurant);
+        }
     }
 
     // ---------------- NAV ACTIONS ----------------
@@ -84,6 +93,8 @@ public class SubscriberMainController {
     private void showReservation() {
         setSection("Make Reservation");
         try {
+            ClientSession.activeHandler = null;
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/ReservationView.fxml"));
             Parent view = loader.load();
 
@@ -102,6 +113,8 @@ public class SubscriberMainController {
     private void showCancelReservation() {
         setSection("Cancel Reservation");
         try {
+            ClientSession.activeHandler = null;
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/CancelReservationView.fxml"));
             Parent view = loader.load();
 
@@ -121,6 +134,8 @@ public class SubscriberMainController {
         setSection("Waiting List");
 
         try {
+            ClientSession.activeHandler = null;
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("WaitingList.fxml"));
             Parent view = loader.load();
 
@@ -135,11 +150,12 @@ public class SubscriberMainController {
         }
     }
 
-
     @FXML
     private void showPayment() {
         setSection("Pay");
         try {
+            ClientSession.activeHandler = null;
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/PaymentView.fxml"));
             Parent view = loader.load();
 
@@ -154,6 +170,37 @@ public class SubscriberMainController {
     }
 
     @FXML
+    private void showCheckIn() {
+        setSection("Check In");
+        try {
+            ClientSession.activeHandler = null;
+
+            // ✅ Try both names to avoid “resource not found”
+            URL url = getClass().getResource("/guestgui/CheckIn.fxml");
+            if (url == null) url = getClass().getResource("/guestgui/CheckInView.fxml");
+
+            if (url == null) {
+                throw new IllegalStateException(
+                        "CheckIn FXML not found. Expected: /guestgui/CheckIn.fxml (or /guestgui/CheckInView.fxml). " +
+                        "Make sure the file is inside the guestgui folder under src and named exactly the same."
+                );
+            }
+
+            FXMLLoader loader = new FXMLLoader(url);
+            Parent view = loader.load();
+
+            guestgui.CheckInController controller = loader.getController();
+            controller.setClient(client);
+            controller.setPrefill(subscriberEmail, subscriberPhone);
+
+            contentArea.getChildren().setAll(view);
+        } catch (Exception e) {
+            e.printStackTrace();
+            setPlaceholder("❌ Failed to load check-in screen.");
+        }
+    }
+
+    @FXML
     private void showUpdateDetails() {
         setSection("Update Details");
         setPlaceholder("Update Details screen (Subscriber).");
@@ -163,6 +210,8 @@ public class SubscriberMainController {
     private void showHistory() {
         setSection("View History");
         try {
+            ClientSession.activeHandler = null;
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/subscribergui/HistoryView.fxml"));
             Parent view = loader.load();
 
@@ -179,6 +228,8 @@ public class SubscriberMainController {
     @FXML
     private void handleLogout() {
         try {
+            ClientSession.clear();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientgui/BistroMain.fxml"));
             Parent root = loader.load();
 
@@ -193,7 +244,6 @@ public class SubscriberMainController {
             e.printStackTrace();
         }
     }
-    
 
     // ---------------- HELPERS ----------------
 

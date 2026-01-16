@@ -2,15 +2,16 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/21" 
-      xmlns:fx="http://javafx.com/fxml/1" 
+<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="guestgui.CheckInController">
-    
+
     <padding>
         <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
     </padding>
@@ -21,19 +22,24 @@
         </font>
     </Label>
 
-    <Label text="Please enter your confirmation code to get your table:" 
+    <Label text="Please enter your confirmation code to get your table:"
            style="-fx-font-size: 14px;" />
 
-    <TextField fx:id="codeField" maxWidth="300.0" 
-               promptText="e.g., XXXXXX" 
+    <TextField fx:id="codeField" maxWidth="300.0"
+               promptText="e.g., XXXXXX"
                style="-fx-font-size: 14px; -fx-padding: 10;" />
 
-    <Button text="Check In Now" 
-            onAction="#handleCheckIn" 
+    <Button text="Check In Now"
+            onAction="#handleCheckIn"
             style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 20; -fx-cursor: hand;" />
 
-    <Label fx:id="statusLabel" 
-           style="-fx-font-size: 14px; -fx-font-weight: bold;" 
+    <Hyperlink text="Forgot confirmation code?"
+               onAction="#handleForgot"
+               style="-fx-font-size: 13px;" />
+
+    <!-- ✅ Add status label so controller can show feedback -->
+    <Label fx:id="statusLabel"
+           style="-fx-font-size: 14px; -fx-font-weight: bold;"
            textFill="RED" />
 
 </VBox>

@@ -1,6 +1,7 @@
 package guestgui;
 
 import client.ClientController;
+import client.ClientSession;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,17 +15,17 @@ public class GuestMainController {
 
     public enum EntryMode { HOME, RESTAURANT }
 
-    private EntryMode entryMode = EntryMode.RESTAURANT;
+    private EntryMode entryMode = EntryMode.HOME; // ✅ safer default
     private ClientController client;
 
     @FXML private Button waitingListBtn;
+    @FXML private Button checkInBtn;        // ✅ must exist in FXML with fx:id="checkInBtn"
     @FXML private Label sectionTitle;
     @FXML private Label modeBadge;
     @FXML private StackPane contentArea;
 
     public void setClient(ClientController client) {
         this.client = client;
-        // Reload reservation after client arrives
         showReservation();
     }
 
@@ -45,6 +46,13 @@ public class GuestMainController {
             waitingListBtn.setVisible(isRestaurant);
             waitingListBtn.setManaged(isRestaurant);
         }
+
+        // ✅ Check In only in Restaurant Mode
+        if (checkInBtn != null) {
+            checkInBtn.setVisible(isRestaurant);
+            checkInBtn.setManaged(isRestaurant);
+        }
+
         if (modeBadge != null) {
             modeBadge.setText(isRestaurant ? "Restaurant Mode" : "Home Mode");
         }
@@ -52,6 +60,7 @@ public class GuestMainController {
 
     @FXML
     private void showReservation() {
+        ClientSession.activeHandler = null; // ✅ avoid old handlers
         if (sectionTitle != null) sectionTitle.setText("Make Reservation");
 
         try {
@@ -59,7 +68,7 @@ public class GuestMainController {
             Parent view = loader.load();
 
             ReservationController controller = loader.getController();
-            controller.setClient(client); // inject client
+            controller.setClient(client);
 
             contentArea.getChildren().setAll(view);
 
@@ -69,9 +78,9 @@ public class GuestMainController {
         }
     }
 
-    // NEW: cancel page as a separate category
     @FXML
     private void showCancelReservation() {
+        ClientSession.activeHandler = null;
         if (sectionTitle != null) sectionTitle.setText("Cancel Reservation");
 
         try {
@@ -79,7 +88,7 @@ public class GuestMainController {
             Parent view = loader.load();
 
             CancelReservationController controller = loader.getController();
-            controller.setClient(client); // inject client
+            controller.setClient(client);
 
             contentArea.getChildren().setAll(view);
 
@@ -91,24 +100,27 @@ public class GuestMainController {
 
     @FXML
     private void showWaitingList() {
+        ClientSession.activeHandler = null;
+        if (sectionTitle != null) sectionTitle.setText("Waiting List");
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/WaitingListGuestView.fxml"));
             Parent view = loader.load();
 
-            
             WaitingListGuestController controller = loader.getController();
-            controller.init(client); // או setClient(client) לפי איך את בונה
+            controller.init(client);
 
             contentArea.getChildren().setAll(view);
 
         } catch (Exception e) {
             e.printStackTrace();
+            contentArea.getChildren().setAll(new Label("❌ Failed to load waiting list screen."));
         }
     }
 
-
     @FXML
     private void showPayment() {
+        ClientSession.activeHandler = null;
         if (sectionTitle != null) sectionTitle.setText("Payment");
 
         try {
@@ -125,17 +137,20 @@ public class GuestMainController {
             contentArea.getChildren().setAll(new Label("❌ Failed to load payment screen."));
         }
     }
-    
+
+    // ✅ Make sure FXML button calls onAction="#showCheckIn"
     @FXML
-    private void checkIn() {
+    private void showCheckIn() {
+        ClientSession.activeHandler = null;
         if (sectionTitle != null) sectionTitle.setText("Check In");
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/CheckInView.fxml"));
+            // ✅ unified name to match subscriber version
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/guestgui/CheckIn.fxml"));
             Parent view = loader.load();
 
             CheckInController controller = loader.getController();
-            controller.setClient(client); // Inject client
+            controller.setClient(client);
 
             contentArea.getChildren().setAll(view);
 
@@ -144,7 +159,7 @@ public class GuestMainController {
             contentArea.getChildren().setAll(new Label("❌ Failed to load check-in screen."));
         }
     }
-    
+
     @FXML
     private void handleBack() {
         try {

@@ -30,6 +30,8 @@ public class ClientRequest implements Serializable {
 	     public static final String CMD_PREVIEW_BILL = "PREVIEW_BILL";
 	     public static final String CMD_GET_SUBSCRIBER_HISTORY = "GET_SUBSCRIBER_HISTORY";
 	     public static final String CMD_CHECK_IN = "CHECK_IN";
+	     public static final String CMD_FORGOT_CONFIRMATION_CODE = "FORGOT_CONFIRMATION_CODE";
+
 
 
 

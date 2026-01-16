@@ -1,6 +1,7 @@
 package server;
 
 import java.io.IOException;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,6 +19,12 @@ import server.dao.ReservationDAO;
 import server.dao.TableDAO;
 import servergui.ServerMainController;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+
+
+
+
 public class BistroServer extends AbstractServer {
 
     private Map<ConnectionToClient, String[]> clientInfoMap = new ConcurrentHashMap<>();
@@ -26,7 +33,19 @@ public class BistroServer extends AbstractServer {
     private ReservationDAO reservationDAO = new ReservationDAO();
 
     private ServerMainController guiController;
+    
+ // simple anti-spam cooldown: key=email|phone -> lastSentMillis
+    private final Map<String, Long> forgotCooldown = new ConcurrentHashMap<>();
 
+    // For now: prints "sent" to server console (you can swap later to real Email/SMS)
+    private final NotificationService notifier =
+    	    new GmailSmtpNotificationService(
+    	        System.getenv("BISTRO_GMAIL_FROM"),
+    	        System.getenv("BISTRO_GMAIL_APP_PASSWORD")
+    	    );
+
+
+    
     public BistroServer(int port, ServerMainController guiController) {
         super(port);
         this.guiController = guiController;
@@ -34,6 +53,8 @@ public class BistroServer extends AbstractServer {
 
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
+        System.out.println("=== SERVER RECEIVED MESSAGE === " + msg);
+      
 
         /* =========================
            LOGIN
@@ -404,6 +425,59 @@ public class BistroServer extends AbstractServer {
                     case "DISCONNECT":
                         client.close();
                         break;
+                        
+                    case ClientRequest.CMD_FORGOT_CONFIRMATION_CODE: {
+                    	
+                    	
+
+                        // If your client sends {phone, email} then KEEP this order:
+                    	String email = (params.length > 0 && params[0] != null) ? params[0].toString().trim() : "";
+                    	String phone = (params.length > 1 && params[1] != null) ? params[1].toString().trim() : "";
+                    	
+                    	System.out.println("FORGOT: email=" + email + " phone=" + phone);
+
+
+                        String genericReply = "FORGOT_OK|If a reservation matches these details, the code was sent.";
+
+                        // require BOTH (recommended)
+                        if (email.isEmpty() || phone.isEmpty()) {
+                            client.sendToClient(genericReply);
+                            break;
+                        }
+
+                        String key = email.toLowerCase() + "|" + phone;
+                        long now = System.currentTimeMillis();
+
+                        Long last = forgotCooldown.get(key);
+                        if (last != null && (now - last) < 60_000) {
+                            client.sendToClient(genericReply);
+                            break;
+                        }
+
+                        // Find code (may be null)
+                        String code = db.findConfirmationCodeByEmailAndPhone(email, phone);
+
+                    	System.out.println("FORGOT: codeFound=" + code);
+
+                        // If found, send it
+                        if (code != null && !code.isBlank()) {
+                            forgotCooldown.put(key, now);
+
+                            String msgText = "Your Bistro confirmation code is: " + code;
+
+                            // email
+                            notifier.sendEmail(email, "Bistro confirmation code", msgText);
+
+                            // sms
+                            notifier.sendSms(phone, msgText);
+                        }
+
+                        // Always generic reply
+                        client.sendToClient(genericReply);
+                        break;
+                    }
+
+
 
                     default:
                         client.sendToClient("❌ Unknown command: " + command);

@@ -26,8 +26,9 @@
                     
             
             <Button text="Check In"
-                    onAction="#checkIn"
-                    styleClass="nav-btn"/>        
+			        fx:id="checkInBtn"
+			        onAction="#showCheckIn"
+			        styleClass="nav-btn"/>
 
 
             <Button text="Pay"

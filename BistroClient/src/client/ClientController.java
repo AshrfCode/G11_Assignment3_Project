@@ -23,63 +23,71 @@ public class ClientController extends AbstractClient {
         this.ui = ui;
     }
 
-    @Override
-    protected void handleMessageFromServer(Object msg) {
+   @Override
+	protected void handleMessageFromServer(Object msg) {
+	
+	    // ✅ First: deliver to the active screen handler (if exists)
+	    if (ClientSession.activeHandler != null) {
+	        ClientSession.activeHandler.accept(msg);
+	
+	        // ✅ Prevent double-handling for common primitive replies
+	        // (Otherwise UI + active screen both react)
+	        if (msg instanceof String || msg instanceof Integer) {
+	            return;
+	        }
+	    }
+	
+	    // ✅ Then: general UI handling
+	    if (msg instanceof String) {
+	        ui.display((String) msg);
+	        return;
+	    }
+	
+	    if (msg instanceof ReservationResponse res) {
+	        ui.display(res.getMessage());
+	        return;
+	    }
+	
+	    if (msg instanceof Integer) {
+	        int tableNum = (Integer) msg;
+	        ui.display("✅ Check-in Successful! Please proceed to Table #" + tableNum);
+	        return;
+	    }
+	
+	    if (msg instanceof List<?>) {
+	        List<?> list = (List<?>) msg;
+	
+	        if (list.isEmpty()) {
+	            ui.display("ℹ️ Received an empty list from server.");
+	            return;
+	        }
+	
+	        if (list.get(0) instanceof Order) {
+	            @SuppressWarnings("unchecked")
+	            List<Order> orders = (List<Order>) list;
+	            ui.display("📦 Received " + orders.size() + " orders.");
+	            return;
+	        }
 
-        // ✅ קודם כל למסך הפעיל
-        if (ClientSession.activeHandler != null) {
-            ClientSession.activeHandler.accept(msg);
-        }
-
-        // ואז UI כללי
-        if (msg instanceof String) {
-            ui.display((String) msg);
+        if (list.get(0) instanceof String) {
+            @SuppressWarnings("unchecked")
+            List<String> slots = (List<String>) list;
+            ui.display("🕒 Available slots: " + String.join(", ", slots));
             return;
         }
 
-        if (msg instanceof ReservationResponse res) {
-            ui.display(res.getMessage());
-            return;
-        }
-        
-        if (msg instanceof Integer) {
-            int tableNum = (Integer) msg;
-            ui.display("✅ Check-in Successful! Please proceed to Table #" + tableNum);
-            return;
-        }
-
-        if (msg instanceof List<?>) {
-            List<?> list = (List<?>) msg;
-
-            if (list.isEmpty()) {
-                ui.display("ℹ️ Received an empty list from server.");
-                return;
-            }
-
-            if (list.get(0) instanceof Order) {
-                @SuppressWarnings("unchecked")
-                List<Order> orders = (List<Order>) list;
-                ui.display("📦 Received " + orders.size() + " orders.");
-                return;
-            }
-
-            if (list.get(0) instanceof String) {
-                @SuppressWarnings("unchecked")
-                List<String> slots = (List<String>) list;
-                ui.display("🕒 Available slots: " + String.join(", ", slots));
-                return;
-            }
-
-            return;
-        }
-
-        if (msg instanceof common.SubscriberHistoryResponse) {
-            return; // activeHandler מטפל
-        }
-
-        System.err.println("⚠️ Unrecognized message from server: " + msg);
-        ui.display("⚠️ Unrecognized message from server.");
+        return;
     }
+
+    // ✅ keep: special response that activeHandler handles
+    if (msg instanceof common.SubscriberHistoryResponse) {
+        return; // activeHandler handles it
+    }
+
+    System.err.println("⚠️ Unrecognized message from server: " + msg);
+    ui.display("⚠️ Unrecognized message from server.");
+}
+
 
 
     public void sendRequest(ClientRequest request) {
@@ -162,6 +170,12 @@ public class ClientController extends AbstractClient {
         sendRequest(new ClientRequest(ClientRequest.CMD_LEAVE_WAITING_LIST_GUEST,
                 new Object[]{confirmationCode}));
     }
+    public void forgotConfirmationCode(String email, String phone) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_FORGOT_CONFIRMATION_CODE,
+                new Object[]{email, phone}));
+    }
+    
+
 
 
 }

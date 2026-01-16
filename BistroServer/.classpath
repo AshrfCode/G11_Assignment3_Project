@@ -8,15 +8,18 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/OCSF"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SharedFiles"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/JavaFX">
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/javaFx">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/ashrf/Desktop/Software Engineering/Semster 6/שיטות/Ex-03-WorkbenchJDBC-1/mysql-connector-j-9.5.0.jar">
+	<classpathentry kind="lib" path="C:/Users/rezek/Downloads/mysql-connector-java-8.0.13.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/rezek/Downloads/angus-activation-2.0.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/rezek/Downloads/jakarta.mail-2.0.4.jar"/>
+	<classpathentry kind="lib" path="C:/Users/rezek/Downloads/jakarta.activation-api-2.1.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

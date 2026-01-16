@@ -12,7 +12,6 @@
           styleClass="sidebar"
           spacing="20">
 
-
         <Label text="BISTRO" styleClass="logo"/>
 
         <VBox spacing="10">
@@ -28,6 +27,12 @@
             <Button text="Pay"
                     onAction="#showPayment"
                     styleClass="nav-btn"/>
+
+            <Button text="Check In"
+			        fx:id="checkInBtn"
+			        onAction="#showCheckIn"
+			        styleClass="nav-btn"/>
+
 
             <Button text="Update Details"
                     onAction="#showUpdateDetails"
@@ -57,19 +62,16 @@
                   alignment="CENTER_LEFT"
                   spacing="10">
 
-                <!-- ✅ ברירת מחדל כדי שלא יהיה ריק בהתחלה -->
                 <Label fx:id="sectionTitle"
                        text="Welcome"
                        styleClass="header-title"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
 
-                <!-- ✅ ברירת מחדל (רשות) -->
                 <Label fx:id="modeBadge"
                        text=""
                        styleClass="mode-badge"/>
 
-                <!-- ✅ ברירת מחדל (רשות) -->
                 <Label fx:id="heyUserLabel"
                        text=""
                        styleClass="hey-user"/>

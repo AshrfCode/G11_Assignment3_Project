@@ -1234,6 +1234,126 @@ public class DBController {
             if (pConn != null) pool.releaseConnection(pConn);
         }
     }
+    public String findConfirmationCodeByEmailAndPhone(String email, String phone) {
+
+        String safeEmail = (email == null) ? "" : email.trim();
+        String safePhone = (phone == null) ? "" : phone.trim();
+
+        if (safeEmail.isEmpty() || safePhone.isEmpty()) return null;
+
+        // Pick the most relevant reservation:
+        // prefer ACTIVE / CHECKED_IN, newest first
+        String sql =
+            "SELECT confirmation_code " +
+            "FROM reservations " +
+            "WHERE email = ? AND phone = ? " +
+            "  AND status IN ('ACTIVE','CHECKED_IN') " +
+            "ORDER BY created_at DESC " +
+            "LIMIT 1";
+
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, safeEmail);
+                ps.setString(2, safePhone);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) return rs.getString("confirmation_code");
+                }
+            }
+
+            // fallback: maybe they already COMPLETED very recently (optional)
+            String sql2 =
+                "SELECT confirmation_code " +
+                "FROM reservations " +
+                "WHERE email = ? AND phone = ? " +
+                "ORDER BY created_at DESC " +
+                "LIMIT 1";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql2)) {
+                ps.setString(1, safeEmail);
+                ps.setString(2, safePhone);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) return rs.getString("confirmation_code");
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+
+        return null;
+    }
+    public String sendConfirmationCodeByEmailOrPhone(String email, String phone) {
+        String safeEmail = (email == null) ? "" : email.trim();
+        String safePhone = (phone == null) ? "" : phone.trim();
+
+        if (safeEmail.isEmpty() && safePhone.isEmpty()) {
+            return "Please enter email or phone.";
+        }
+
+        PooledConnection pConn = null;
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            // Pick the latest ACTIVE reservation that matches
+            String sql =
+                "SELECT confirmation_code, email, phone " +
+                "FROM reservations " +
+                "WHERE status='ACTIVE' AND (" +
+                " (email<>'' AND email=? ) OR (phone<>'' AND phone=? )" +
+                ") " +
+                "ORDER BY created_at DESC " +
+                "LIMIT 1";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, safeEmail);
+                ps.setString(2, safePhone);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) return "No active reservation found for these details.";
+
+                    String code = rs.getString("confirmation_code");
+                    String toEmail = rs.getString("email");
+                    String toPhone = rs.getString("phone");
+
+                    // send EMAIL (only if we have email)
+                    if (toEmail != null && !toEmail.isBlank()) {
+                        NotificationService notifier =
+                            new GmailSmtpNotificationService(
+                                System.getenv("BISTRO_GMAIL_FROM"),
+                                System.getenv("BISTRO_GMAIL_APP_PASSWORD")
+                            );
+
+                        notifier.sendEmail(
+                            toEmail,
+                            "Bistro Confirmation Code",
+                            "Your confirmation code is: " + code
+                        );
+                    }
+
+                    // SMS will come next (Twilio) – for now just say OK
+                    return "OK: If details match, we sent your code.";
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Server error while sending code: " + e.getMessage();
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+
+
 
 
 }
