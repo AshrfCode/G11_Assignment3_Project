@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="subscribergui.UpdateDetailsController"
+      spacing="14"
+      alignment="TOP_CENTER">
+
+    <padding>
+        <Insets top="30" right="30" bottom="30" left="30"/>
+    </padding>
+
+    <Label text="Update Subscriber Details">
+        <font>
+            <Font name="System Bold" size="22"/>
+        </font>
+    </Label>
+
+    <Label text="You can update your email and phone number." style="-fx-text-fill: #555;"/>
+
+    <VBox spacing="10" maxWidth="420" style="-fx-background-color: white; -fx-padding: 18; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: #e6e6e6;">
+        <Label text="Email" />
+        <TextField fx:id="emailField" promptText="name@example.com"/>
+
+        <Label text="Phone" />
+        <TextField fx:id="phoneField" promptText="05XXXXXXXX"/>
+
+        <Button text="Save Changes"
+                fx:id="saveBtn"
+                onAction="#handleSave"
+                maxWidth="Infinity"
+                style="-fx-background-color: #2E7D32; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 14; -fx-cursor: hand;"/>
+
+        <Label fx:id="statusLabel" text="" style="-fx-font-weight: bold;"/>
+    </VBox>
+
+</VBox>

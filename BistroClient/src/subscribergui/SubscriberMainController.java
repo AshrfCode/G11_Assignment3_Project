@@ -203,8 +203,33 @@ public class SubscriberMainController {
     @FXML
     private void showUpdateDetails() {
         setSection("Update Details");
-        setPlaceholder("Update Details screen (Subscriber).");
+        try {
+            ClientSession.activeHandler = null;
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/subscribergui/UpdateDetailsView.fxml"));
+            Parent view = loader.load();
+
+            UpdateDetailsController controller = loader.getController();
+            controller.init(
+                    client,
+                    subscriberId,
+                    subscriberEmail,
+                    subscriberPhone,
+                    (newEmail, newPhone) -> {
+                        // update local fields after success
+                        subscriberEmail = (newEmail == null) ? "" : newEmail.trim();
+                        subscriberPhone = (newPhone == null) ? "" : newPhone.trim();
+                    }
+            );
+
+            contentArea.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setPlaceholder("❌ Failed to load update details screen.");
+        }
     }
+
 
     @FXML
     private void showHistory() {

@@ -229,4 +229,41 @@ public class MySQLUserDAO {
             );
         }
     }
+    public boolean isEmailTakenByAnotherUser(Connection conn, String email, int userId) throws SQLException {
+        String sql = "SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id <> ? LIMIT 1";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, email);
+            stmt.setInt(2, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public boolean updateUserContact(int userId, String newEmail, String newPhone) throws SQLException {
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            pConn.touch();
+            Connection conn = pConn.getConnection();
+
+            // optional uniqueness check
+            if (isEmailTakenByAnotherUser(conn, newEmail, userId)) {
+                return false;
+            }
+
+            String sql = "UPDATE users SET email = ?, phone = ? WHERE id = ? AND is_active = 1";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, newEmail);
+                stmt.setString(2, newPhone);
+                stmt.setInt(3, userId);
+                return stmt.executeUpdate() > 0;
+            }
+
+        } finally {
+            pool.releaseConnection(pConn);
+        }
+    }
+
 }

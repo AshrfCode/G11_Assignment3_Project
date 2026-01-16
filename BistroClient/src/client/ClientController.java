@@ -174,7 +174,11 @@ public class ClientController extends AbstractClient {
         sendRequest(new ClientRequest(ClientRequest.CMD_FORGOT_CONFIRMATION_CODE,
                 new Object[]{email, phone}));
     }
-    
+    public void updateSubscriberDetails(int subscriberId, String newEmail, String newPhone) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_UPDATE_SUBSCRIBER_DETAILS,
+                new Object[]{ subscriberId, newEmail, newPhone }));
+    }
+
 
 
 

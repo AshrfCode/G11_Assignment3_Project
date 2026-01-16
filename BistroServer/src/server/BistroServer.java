@@ -76,7 +76,7 @@ public class BistroServer extends AbstractServer {
                     // שמירת ROLE בצד שרת לצורך הרשאות
                     clientInfoMap.put(client, new String[] {
                             user.getRole().toString(),
-                            user.getName()
+                            user.getName(),String.valueOf(user.getId())
                     });
 
                     String safeEmail = (user.getEmail() == null) ? "" : user.getEmail();
@@ -476,6 +476,58 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(genericReply);
                         break;
                     }
+                    case ClientRequest.CMD_UPDATE_SUBSCRIBER_DETAILS: {
+
+                        // params: subscriberId, newEmail, newPhone
+                        int requestedId = Integer.parseInt(params[0].toString());
+                        String newEmail = (params[1] == null) ? "" : params[1].toString().trim();
+                        String newPhone = (params[2] == null) ? "" : params[2].toString().trim();
+
+                        // basic validation
+                        if (newEmail.isEmpty() || !newEmail.contains("@") || !newEmail.contains(".")) {
+                            client.sendToClient("UPDATE_SUB_FAIL|Invalid email.");
+                            break;
+                        }
+                        if (newPhone.isEmpty() || newPhone.length() < 7) {
+                            client.sendToClient("UPDATE_SUB_FAIL|Invalid phone.");
+                            break;
+                        }
+
+                        // auth: allow self-update OR representative/manager
+                        String[] info = clientInfoMap.get(client);
+                        String role = (info != null && info.length > 0) ? info[0] : "UNKNOWN";
+                        int loggedInId = -1;
+                        if (info != null && info.length >= 3) {
+                            try { loggedInId = Integer.parseInt(info[2]); } catch (Exception ignored) {}
+                        }
+
+                        boolean isRep = "REPRESENTATIVE".equals(role) || "MANAGER".equals(role);
+                        boolean isSelf = (loggedInId > 0 && loggedInId == requestedId);
+
+                        if (!isSelf && !isRep) {
+                            client.sendToClient("UPDATE_SUB_FAIL|Unauthorized.");
+                            break;
+                        }
+
+                        try {
+                            MySQLUserDAO userDAO = new MySQLUserDAO();
+                            boolean ok = userDAO.updateUserContact(requestedId, newEmail, newPhone);
+
+                            if (ok) {
+                                client.sendToClient("UPDATE_SUB_OK|" + newEmail + "|" + newPhone);
+                            } else {
+                                // most common cause: email already taken
+                                client.sendToClient("UPDATE_SUB_FAIL|Email is already used by another user.");
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            client.sendToClient("UPDATE_SUB_FAIL|Server error.");
+                        }
+
+                        break;
+                    }
+
 
 
 
