@@ -484,24 +484,38 @@ public class DBController {
  }
 
  public boolean updateOpeningHours(String day, String openTime, String closeTime) {
-	    String sql =
-	        "INSERT INTO opening_hours (day, open_time, close_time) " +
-	        "VALUES (?, ?, ?) " +
-	        "ON DUPLICATE KEY UPDATE open_time=VALUES(open_time), close_time=VALUES(close_time)";
+    // 1. HELPER: Auto-fix "HH:mm" to "HH:mm:ss"
+    if (openTime != null && openTime.length() == 5) {
+        openTime += ":00";
+    }
+    if (closeTime != null && closeTime.length() == 5) {
+        closeTime += ":00";
+    }
 
-	    try (Connection conn = pool.getConnection().getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
+    // 2. SQL: Standard UPDATE logic
+    // "Update the times only if we find this specific day"
+    String sql = "UPDATE opening_hours SET open_time = ?, close_time = ? WHERE day = ?";
 
-	        ps.setString(1, day);                     // SUNDAY
-	        ps.setTime(2, Time.valueOf(openTime));   // 10:00
-	        ps.setTime(3, Time.valueOf(closeTime));  // 22:00
+    try (Connection conn = pool.getConnection().getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
 
-	        return ps.executeUpdate() > 0;
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return false;
-	    }
-	}
+        // 3. PARAMETERS: Notice the order changed!
+        // The ??? correspond to: open_time, close_time, day
+        ps.setTime(1, Time.valueOf(openTime));   // 1st ?
+        ps.setTime(2, Time.valueOf(closeTime));  // 2nd ?
+        ps.setString(3, day);                    // 3rd ? (WHERE day = ...)
+
+        int rowsAffected = ps.executeUpdate();
+        
+        // If rowsAffected > 0, it means the update worked.
+        // If it is 0, it means that day doesn't exist in the DB yet.
+        return rowsAffected > 0;
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return false;
+    }
+}
 
 
  private int dayNameToInt(String dayName) {
