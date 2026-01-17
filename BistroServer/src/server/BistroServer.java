@@ -22,9 +22,6 @@ import server.dao.ReservationDAO;
 import server.dao.TableDAO;
 import servergui.ServerMainController;
 
-
-
-
 public class BistroServer extends AbstractServer {
 
     private Map<ConnectionToClient, String[]> clientInfoMap = new ConcurrentHashMap<>();
@@ -72,11 +69,9 @@ public class BistroServer extends AbstractServer {
       
     }
 
-
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
         System.out.println("=== SERVER RECEIVED MESSAGE === " + msg);
-      
 
         /* =========================
            LOGIN
@@ -120,6 +115,46 @@ public class BistroServer extends AbstractServer {
             }
 
             return;
+        }
+        
+        /* =========================
+        CARD READER SIGN IN
+        ========================= */
+
+        else if (msg instanceof common.CardLoginRequest cardRequest) {
+            try {
+                MySQLUserDAO userDAO = new MySQLUserDAO();
+                
+                // Call the new DAO method
+                User user = userDAO.authenticateByCard(cardRequest.getDigitalCode());
+
+                if (user == null) {
+                    client.sendToClient("LOGIN_FAIL|Invalid card code");
+                } else {
+                    // Update server-side client info
+                    clientInfoMap.put(client, new String[] {
+                            user.getRole().toString(),
+                            user.getName(),
+                            String.valueOf(user.getId())
+                    });
+
+                    String safeEmail = (user.getEmail() == null) ? "" : user.getEmail();
+                    String safePhone = (user.getPhone() == null) ? "" : user.getPhone();
+
+                    // Send the exact same protocol string the client expects
+                    client.sendToClient(
+                            "LOGIN_OK|" + user.getRole() + "|" + user.getName()
+                                    + "|" + user.getId()
+                                    + "|" + safeEmail
+                                    + "|" + safePhone
+                    );
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                try {
+                    client.sendToClient("LOGIN_FAIL|Server error during card login");
+                } catch (Exception ignored) {}
+            }
         }
 
         /* =========================

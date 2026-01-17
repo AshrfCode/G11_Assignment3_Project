@@ -106,6 +106,47 @@ public class MySQLUserDAO {
             rs.getTimestamp("created_at")
         );
     }
+    
+ // =================================================
+    // LOGIN BY CARD (Tag Reader)
+    // =================================================
+
+    public User authenticateByCard(String digitalCode) throws SQLException {
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            pConn.touch();
+            Connection conn = pConn.getConnection();
+
+            // Join users and subscribers to find the owner of the card
+            String sql = """
+                SELECT u.*
+                FROM users u
+                JOIN subscribers s ON u.id = s.user_id
+                WHERE s.digital_card = ? AND u.is_active = 1
+            """;
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, digitalCode);
+
+                ResultSet rs = stmt.executeQuery();
+
+                if (!rs.next()) {
+                    return null; // Card not found
+                }
+
+                User baseUser = mapUser(rs);
+                
+                // Since they have a digital_card, they are definitely a SUBSCRIBER.
+                // We reuse the existing loadSubscriber method to get the full object.
+                return loadSubscriber(conn, baseUser);
+            }
+
+        } finally {
+            pool.releaseConnection(pConn);
+        }
+    }
 
     // =================================================
     // ROLE-SPECIFIC LOADERS

@@ -22,6 +22,7 @@ public class BistroMainController implements ChatIF {
     @FXML private PasswordField txtPassword;
     @FXML private ToggleButton toggleHome;
     @FXML private ToggleButton toggleRestaurant;
+    @FXML private TextField txtMemberCode;
 
     private ClientController client;
 
@@ -99,7 +100,26 @@ public class BistroMainController implements ChatIF {
 
     @FXML
     private void handleQuickAccess() {
-        statusLabel.setText("Quick clicked (not implemented yet)");
+        String code = txtMemberCode.getText().trim();
+
+        if (code.isEmpty()) {
+            statusLabel.setText("Please scan or enter a member code.");
+            return;
+        }
+
+        // 1. Force the UI to Restaurant mode as requested
+        // This ensures that when display() processes the LOGIN_OK, 
+        // it opens the Subscriber view in RESTAURANT mode.
+        toggleRestaurant.setSelected(true); 
+
+        // 2. Send the new request type
+        try {
+            client.sendToServer(new common.CardLoginRequest(code));
+            statusLabel.setText("Verifying card...");
+        } catch (Exception e) {
+            e.printStackTrace();
+            statusLabel.setText("Failed to contact server.");
+        }
     }
 
     @FXML
