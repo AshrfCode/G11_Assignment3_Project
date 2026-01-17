@@ -34,6 +34,8 @@ public class ManageSubscribersController {
     @FXML private TableColumn<User, String> colPhone;
     @FXML private TableColumn<User, Boolean> colActive;
     @FXML private TableColumn<User, Timestamp> colCreatedAt;
+    @FXML private TableColumn<User, String> colSubNumber;
+    @FXML private TableColumn<User, String> colDigitalCard;
 
     // =========================
     // FORM
@@ -50,6 +52,8 @@ public class ManageSubscribersController {
 
         ClientSession.activeHandler = this::handleServerMessage;
 
+        colSubNumber.setCellValueFactory(new PropertyValueFactory<>("subscriberNumber"));
+        colDigitalCard.setCellValueFactory(new PropertyValueFactory<>("digitalCard"));
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colName.setCellValueFactory(new PropertyValueFactory<>("name"));
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));

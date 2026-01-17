@@ -139,6 +139,12 @@ public class ReservationController {
                         setStatus("❌ No available slots for this date.");
                         return;
                     }
+                    
+                    if (list.get(0).equals("CLOSED")) {
+                        timeCombo.getItems().clear();
+                        setStatus("❌ The restaurant is closed on this date.");
+                        return;
+                    }
 
                     if (!(list.get(0) instanceof String)) {
                         return;

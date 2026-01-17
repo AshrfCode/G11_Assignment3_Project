@@ -141,7 +141,6 @@ public class DBController {
 
     public List<String> getAvailableReservationSlots(String dateStr, int dinners) {
         List<String> slots = new ArrayList<>();
-
         PooledConnection pConn = null;
 
         try {
@@ -151,31 +150,37 @@ public class DBController {
             pConn.touch();
             Connection conn = pConn.getConnection();
 
+            // ✅ CALL THE SMART HELPER HERE
             HoursRange hours = getOpeningHoursOrDefault(conn, date);
 
-            LocalTime lastStart = hours.close.minusHours(2);
+            // 1. If closed (Holiday or just closed day), return empty immediately
+            if (hours.isClosed) {
+            	slots.add("CLOSED");
+                return slots; 
+            }
 
+            LocalTime lastStart = hours.close.minusHours(2);
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime minAllowed = now.plusHours(1);
             LocalDateTime maxAllowed = now.plusMonths(1);
 
             LocalTime t = hours.open;
+            
             while (!t.isAfter(lastStart)) {
                 LocalDateTime start = LocalDateTime.of(date, t);
 
                 if (!start.isBefore(minAllowed) && !start.isAfter(maxAllowed)) {
                     if (isSlotAvailable(conn, start, dinners)) {
-                        slots.add(t.toString()); // "HH:mm"
+                        slots.add(t.toString());
                     }
                 }
-
                 t = t.plusMinutes(30);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            pool.releaseConnection(pConn);
+            if (pConn != null) pool.releaseConnection(pConn);
         }
 
         return slots;
@@ -854,13 +859,58 @@ public class DBController {
     // -------------------- opening hours --------------------
 
     private HoursRange getOpeningHoursOrDefault(Connection conn, LocalDate date) {
-        LocalTime open = LocalTime.of(10, 0);
-        LocalTime close = LocalTime.of(22, 0);
+        // Priority 1: Check SPECIAL dates (Holidays)
+        //
+        HoursRange special = tryReadSpecialHours(conn, date);
+        if (special != null) return special;
 
-        HoursRange dbHours = tryReadHours(conn, date);
-        if (dbHours != null) return dbHours;
+        // Priority 2: Check REGULAR weekly schedule
+        //
+        HoursRange regular = tryReadRegularHours(conn, date);
+        if (regular != null) return regular;
 
-        return new HoursRange(open, close);
+        // Priority 3: Default Hardcoded
+        return new HoursRange(LocalTime.of(10, 0), LocalTime.of(22, 0));
+    }
+
+    // --- Sub-helper for Special Table ---
+    private HoursRange tryReadSpecialHours(Connection conn, LocalDate date) {
+        String sql = "SELECT open_time, close_time, is_closed FROM special_opening_hours WHERE special_date = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, date.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    boolean closed = rs.getBoolean("is_closed");
+                    if (closed) return new HoursRange(null, null, true); // Return CLOSED
+
+                    Time o = rs.getTime("open_time");
+                    Time c = rs.getTime("close_time");
+                    if (o != null && c != null) {
+                        return new HoursRange(o.toLocalTime(), c.toLocalTime(), false);
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    // --- Sub-helper for Regular Table ---
+    private HoursRange tryReadRegularHours(Connection conn, LocalDate date) {
+        String sql = "SELECT open_time, close_time FROM opening_hours WHERE day = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            // Converts Java's MONDAY to DB's 'MONDAY' to match your enum
+            ps.setString(1, date.getDayOfWeek().toString()); 
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Time o = rs.getTime("open_time");
+                    Time c = rs.getTime("close_time");
+                    if (o != null && c != null) {
+                        return new HoursRange(o.toLocalTime(), c.toLocalTime(), false);
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     private HoursRange tryReadHours(Connection conn, LocalDate date) {
@@ -929,12 +979,18 @@ public class DBController {
 
 
     private static class HoursRange {
-        final LocalTime open;
-        final LocalTime close;
+        LocalTime open;
+        LocalTime close;
+        boolean isClosed;
 
-        HoursRange(LocalTime open, LocalTime close) {
+        public HoursRange(LocalTime open, LocalTime close) {
+            this(open, close, false);
+        }
+
+        public HoursRange(LocalTime open, LocalTime close, boolean isClosed) {
             this.open = open;
             this.close = close;
+            this.isClosed = isClosed;
         }
     }
     
@@ -1739,6 +1795,11 @@ public class DBController {
 
                     // ✅ 1) Only invite during opening hours AND only if there is time for a full 2h seating
                     HoursRange hours = getOpeningHoursOrDefault(conn, now.toLocalDate());
+                    
+                    if (hours.isClosed) {
+                        break; // Restaurant is closed today -> stop sending invites
+                    }
+                    
                     LocalTime open = hours.open;
                     LocalTime close = hours.close;
 

@@ -17,6 +17,8 @@ public class User implements Serializable {
     private UserRole role;
     private boolean active;
     private Timestamp createdAt;
+    private String subscriberNumber;
+    private String digitalCard;
 
     // Empty constructor (required)
     public User() {
@@ -79,6 +81,22 @@ public class User implements Serializable {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+    
+    public String getSubscriberNumber() {
+        return subscriberNumber;
+    }
+
+    public void setSubscriberNumber(String subscriberNumber) {
+        this.subscriberNumber = subscriberNumber;
+    }
+
+    public String getDigitalCard() {
+        return digitalCard;
+    }
+
+    public void setDigitalCard(String digitalCard) {
+        this.digitalCard = digitalCard;
     }
 
     // ⚠️ Plain password (as per project requirement)

@@ -67,28 +67,42 @@ public class MySQLUserDAO {
 
     public List<User> getAllSubscribers() throws SQLException {
 
-        List<User> list = new ArrayList<>();
-        PooledConnection pConn = null;
+    List<User> list = new ArrayList<>();
+    PooledConnection pConn = null;
 
-        try {
-            pConn = pool.getConnection();
-            Connection conn = pConn.getConnection();
+    try {
+        pConn = pool.getConnection();
+        Connection conn = pConn.getConnection();
 
-            String sql = "SELECT * FROM users WHERE role = 'SUBSCRIBER'";
+        // ✅ MODIFIED SQL: Join 'users' with 'subscribers'
+        String sql = """
+            SELECT u.*, s.subscriber_number, s.digital_card
+            FROM users u
+            JOIN subscribers s ON u.id = s.user_id
+            WHERE u.role = 'SUBSCRIBER'
+        """;
 
-            try (PreparedStatement stmt = conn.prepareStatement(sql);
-                 ResultSet rs = stmt.executeQuery()) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
-                while (rs.next()) {
-                    list.add(mapUser(rs));
-                }
+            while (rs.next()) {
+                // 1. Map the basic User data (using your existing mapper)
+                User user = mapUser(rs);
+
+                // 2. ✅ Manually set the extra fields from the JOIN result
+                // (Make sure you added these setters to your User class as discussed)
+                user.setSubscriberNumber(rs.getString("subscriber_number"));
+                user.setDigitalCard(rs.getString("digital_card"));
+
+                list.add(user);
             }
-            return list;
-
-        } finally {
-            pool.releaseConnection(pConn);
         }
+        return list;
+
+    } finally {
+        pool.releaseConnection(pConn);
     }
+}
 
     // =================================================
     // MAPPERS
