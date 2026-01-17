@@ -30,6 +30,10 @@ public class representativeMainController {
 
     public void setClient(ClientController client) {
         this.client = client;
+        
+        if (this.client != null) {
+        	showReservationsToday(); // Load the default screen NOW, because we have a connection.
+        }
     }
 
 
@@ -61,8 +65,8 @@ public class representativeMainController {
         applyModeUI();
         applyRoleUI();
         setUsername(username);
-        showReservations(); // default page
     }
+    
 
     // =========================
     // NAVIGATION – LOAD INTO contentArea
@@ -79,13 +83,8 @@ public class representativeMainController {
         loadContent("/representativegui/ManageTables.fxml",
                 "Manage Tables");
     }
-
-
-    
-    
+  
     // ---------------- NAV ACTIONS ----------------
-
-
     @FXML
 	private void showReservations() {
 	    setSection("Manage Orders");
@@ -363,7 +362,6 @@ public class representativeMainController {
     }
 
 
-
     @FXML
     private void showWaitingList() {
         setSection("Waiting List");
@@ -502,6 +500,8 @@ public class representativeMainController {
     @FXML
     private void handleLogout() {
         try {
+        	ClientSession.clear();
+        	
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/clientgui/BistroMain.fxml")
             );
