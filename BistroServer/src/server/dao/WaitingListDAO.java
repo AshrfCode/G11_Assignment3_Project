@@ -8,7 +8,7 @@ public class WaitingListDAO {
 
     public WaitingListDAO(Connection conn) {
         this.conn = conn;
-    }
+    }    
 
     // userId -> subscriber_number
     private String getSubscriberNumberByUserId(int userId) throws SQLException {

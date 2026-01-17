@@ -27,6 +27,7 @@
 		    <Button text="Manage Orders"
 		            onAction="#showReservations"
 		            styleClass="nav-btn"/>
+		            
 		     <Button text="Manage Opening Hours"
                     onAction="#showOpeningHoursManagement"
                     styleClass="nav-btn"/>

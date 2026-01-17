@@ -3,7 +3,6 @@ package guestgui;
 import client.ClientController;
 import client.ClientSession;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
@@ -11,8 +10,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
+
 
 public class ReservationController {
+
+    public enum EntryMode { HOME, RESTAURANT }
 
     private static final int MAX_DINERS = 10;
 
@@ -25,12 +29,23 @@ public class ReservationController {
 
     private ClientController client;
 
-    // Subscriber mode: auto-fill + lock email/phone, and send subscriberId to server
+    // Subscriber mode
     private boolean subscriberMode = false;
     private int subscriberId = -1;
+    private PauseTransition reserveTimeout;
+    private boolean waitingReserveReply = false;
+    private volatile boolean reserveReplyArrived = false;
+
+
+    // Mode (Home / Restaurant) - kept if you need it later
+    private EntryMode entryMode = EntryMode.HOME;
 
     public void setClient(ClientController client) {
         this.client = client;
+    }
+
+    public void setEntryMode(EntryMode mode) {
+        this.entryMode = (mode == null) ? EntryMode.HOME : mode;
     }
 
     public void setSubscriberInfo(int id, String email, String phone) {
@@ -85,13 +100,13 @@ public class ReservationController {
             return;
         }
 
-        // keep typed time
+        // typed/selected time
         String chosenTime = timeCombo.getValue();
         if (chosenTime == null || chosenTime.isEmpty()) {
             chosenTime = timeCombo.getEditor() != null ? timeCombo.getEditor().getText().trim() : "";
         }
 
-        // validate time format if typed
+        // validate typed time if exists
         if (chosenTime != null && !chosenTime.isEmpty()) {
             try {
                 LocalTime t = LocalTime.parse(chosenTime);
@@ -117,30 +132,46 @@ public class ReservationController {
         ClientSession.activeHandler = (msg) -> {
             if (msg instanceof List<?> list) {
                 Platform.runLater(() -> {
-                    if (timeCombo.getEditor() != null) timeCombo.getEditor().setText(timeForMsg);
-                    timeCombo.setValue(timeForMsg);
 
+                    // Fill items
                     if (list.isEmpty()) {
+                        timeCombo.getItems().clear();
                         setStatus("❌ No available slots for this date.");
                         return;
                     }
 
-                    if (list.get(0) instanceof String) {
-                        @SuppressWarnings("unchecked")
-                        List<String> slots = (List<String>) list;
+                    if (!(list.get(0) instanceof String)) {
+                        return;
+                    }
 
-                        timeCombo.getItems().setAll(slots);
+                    @SuppressWarnings("unchecked")
+                    List<String> slots = (List<String>) list;
 
-                        if (timeForMsg != null && !timeForMsg.isEmpty()) {
-                            boolean ok = false;
-                            for (String s : slots) {
-                                if (timeForMsg.equals(s)) { ok = true; break; }
-                            }
-                            setStatus(ok ? "✅ Available at " + timeForMsg + "."
-                                    : "❌ Full at " + timeForMsg + ". Choose another time.");
+                    timeCombo.getItems().setAll(slots);
+
+                    // If user typed a time and it's NOT available -> do your "full -> load -> open" behavior
+                    if (timeForMsg != null && !timeForMsg.isEmpty()) {
+                        boolean ok = slots.contains(timeForMsg);
+
+                        if (ok) {
+                            timeCombo.setValue(timeForMsg);
+                            if (timeCombo.getEditor() != null) timeCombo.getEditor().setText(timeForMsg);
+                            setStatus("✅ Available at " + timeForMsg + ".");
                         } else {
-                            setStatus("✅ Available times loaded.");
+                            // Clear wrong time and OPEN the dropdown
+                            timeCombo.setValue("");
+                            if (timeCombo.getEditor() != null) timeCombo.getEditor().setText("");
+
+                            setStatus("❌ Full at " + timeForMsg + ". Loading available times…");
+
+                            // show the list and then message
+                            timeCombo.show();
+                            setStatus("Please choose an available time from the list.");
                         }
+                    } else {
+                        // No typed time, just load + open
+                        setStatus("✅ Available times loaded.");
+                        timeCombo.show();
                     }
                 });
             }
@@ -164,7 +195,7 @@ public class ReservationController {
 
         String time = timeCombo.getValue();
         if (time == null || time.isEmpty()) {
-            time = timeCombo.getEditor() != null ? timeCombo.getEditor().getText().trim() : "";
+            time = (timeCombo.getEditor() != null) ? timeCombo.getEditor().getText().trim() : "";
         }
         if (time.isEmpty()) {
             setStatus("❌ Please choose or type a time (HH:mm).");
@@ -184,7 +215,7 @@ public class ReservationController {
         String phone = phoneField.getText() == null ? "" : phoneField.getText().trim();
         String email = emailField.getText() == null ? "" : emailField.getText().trim();
 
-        if (phone.isEmpty() && email.isEmpty()) {
+        if (!subscriberMode && phone.isEmpty() && email.isEmpty()) {
             setStatus("❌ Please enter phone or email.");
             return;
         }
@@ -204,32 +235,91 @@ public class ReservationController {
         }
 
         String dateTimeStr = date + " " + time;
+
         setStatus("Sending reservation...");
+        reserveReplyArrived = false;
+
+        final int dinersFinal = diners;
+        final String timeFinal = time;
+        final String dateStrFinal = date.toString();
+
+        // ✅ FALLBACK: if no server reply arrives, don't get stuck
+        PauseTransition fallback = new PauseTransition(Duration.seconds(2.5));
+        fallback.setOnFinished(e -> {
+            if (!reserveReplyArrived) {
+                Platform.runLater(() -> setStatus("❌ Full at " + timeFinal + ". Loading available times..."));
+                loadSlotsAndOpen(dateStrFinal, dinersFinal, timeFinal);
+            }
+        });
+        fallback.play();
 
         ClientSession.activeHandler = (msg) -> {
             if (msg instanceof String s) {
+                reserveReplyArrived = true;
+                fallback.stop();
+
                 if (s.startsWith("RESERVATION_OK|")) {
                     Platform.runLater(() -> {
                         String code = s.substring("RESERVATION_OK|".length());
                         setStatus("✅ Reserved! Confirmation code: " + code);
                     });
-                } else if (s.startsWith("RESERVATION_FAIL")) {
-                    Platform.runLater(() -> setStatus("❌ Full. Choose another time."));
-                    // refresh available slots
-                    client.requestAvailableSlots(date.toString(), diners);
+                    return;
+                }
+
+                // full or fail -> load times
+                if (s.startsWith("RESERVATION_FAIL") || s.startsWith("RESERVATION_FULL")) {
+                    Platform.runLater(() -> setStatus("❌ Full at " + timeFinal + ". Loading available times..."));
+                    loadSlotsAndOpen(dateStrFinal, dinersFinal, timeFinal);
                 }
             }
         };
-        
-        String customerKey = (subscriberMode && subscriberId > 0)
-                ? "SUB:" + subscriberId    // ✅ important: mark as subscriber id
-                : (!email.isEmpty() ? email : phone);
 
+        String customerKey = (subscriberMode && subscriberId > 0)
+                ? "SUB:" + subscriberId
+                : (!email.isEmpty() ? email : phone);
 
         String chosenEmail = (!email.isEmpty()) ? email : "";
 
+        // you can keep this direct call:
         client.createReservation(dateTimeStr, diners, customerKey, phone, chosenEmail);
     }
+
+
+
+    // ✅ One helper used by Reserve-full behavior
+    private void loadSlotsAndOpen(String dateStr, int diners, String requestedTime) {
+
+        ClientSession.activeHandler = (msg) -> {
+            if (msg instanceof List<?> list) {
+                if (list.isEmpty()) {
+                    Platform.runLater(() -> setStatus("❌ No available slots for this date."));
+                    return;
+                }
+
+                if (list.get(0) instanceof String) {
+                    @SuppressWarnings("unchecked")
+                    List<String> slots = (List<String>) list;
+
+                    Platform.runLater(() -> {
+                        timeCombo.getItems().setAll(slots);
+
+                        // clear invalid time
+                        timeCombo.setValue("");
+                        if (timeCombo.getEditor() != null) timeCombo.getEditor().setText("");
+
+                        setStatus("❌ Full at " + requestedTime + ". Please choose an available time from the list.");
+
+                        // open dropdown
+                        timeCombo.show();
+                    });
+                }
+            }
+        };
+
+        client.requestAvailableSlots(dateStr, diners);
+    }
+
+
 
     private int parsePositiveInt(String s) {
         try {
@@ -243,4 +333,5 @@ public class ReservationController {
     private void setStatus(String msg) {
         if (statusLabel != null) statusLabel.setText(msg);
     }
+    
 }

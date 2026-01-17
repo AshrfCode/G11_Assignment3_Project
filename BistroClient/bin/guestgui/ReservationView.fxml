@@ -39,7 +39,11 @@
         <TextField fx:id="emailField" promptText="Email"/>
     </HBox>
 
-    <Button text="Reserve" onAction="#handleReserve"/>
+    <HBox spacing="10">
+        <Button text="Reserve" onAction="#handleReserve"/>
+
+       
+    </HBox>
 
     <Label fx:id="statusLabel" text=""/>
 </VBox>

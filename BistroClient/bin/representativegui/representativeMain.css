@@ -92,3 +92,18 @@
     -fx-text-fill: #425B58;
     -fx-font-size: 14px;
 }
+
+.report-card-btn {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);
+}
+.report-card-btn:hover {
+    -fx-background-color: #f0f0f0;
+    -fx-border-color: #aaaaaa;
+}

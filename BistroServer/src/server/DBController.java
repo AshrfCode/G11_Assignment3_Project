@@ -259,7 +259,7 @@ public class DBController {
 
             Integer tableId = findBestAvailableTable(conn, start, dinners);
             if (tableId == null) {
-                return null;
+                return "FULL";
             }
 
             String safePhone = (phone == null) ? "" : phone.trim();
@@ -1188,6 +1188,11 @@ public class DBController {
             pConn.touch();
             Connection conn = pConn.getConnection();
 
+            // ✅ block outside opening hours
+            if (!isWithinWorkingHoursNow(conn)) {
+                return "CLOSED";
+            }
+
             WaitingListDAO dao = new WaitingListDAO(conn);
             return dao.joinAsSubscriber(userId, diners, phone, email);
 
@@ -1199,6 +1204,7 @@ public class DBController {
             if (pConn != null) pool.releaseConnection(pConn);
         }
     }
+
 
     private String generateWLConfirmationCode() {
         SecureRandom random = new SecureRandom();
@@ -1265,6 +1271,11 @@ public class DBController {
             pConn = pool.getConnection();
             pConn.touch();
             Connection conn = pConn.getConnection();
+
+            // ✅ block outside opening hours
+            if (!isWithinWorkingHoursNow(conn)) {
+                return "CLOSED";
+            }
 
             WaitingListDAO dao = new WaitingListDAO(conn);
             return dao.joinAsGuest(diners, phone, email);
@@ -1596,7 +1607,438 @@ public class DBController {
             if (pConn != null) pool.releaseConnection(pConn);
         }
     }
+    
+    public int cancelNoShowReservations(NotificationService notifier) {
+        PooledConnection pConn = null;
+        int canceled = 0;
+
+        String selectSql =
+            "SELECT reservation_id, confirmation_code, email, phone, start_time " +
+            "FROM reservations " +
+            "WHERE status='ACTIVE' " +
+            "  AND check_in_time IS NULL " +
+            "  AND start_time <= (NOW() - INTERVAL 15 MINUTE)";
+
+        String updateSql =
+            "UPDATE reservations " +
+            "SET status='CANCELED' " +
+            "WHERE reservation_id=? AND status='ACTIVE' AND check_in_time IS NULL";
+
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            boolean oldAuto = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement psSel = conn.prepareStatement(selectSql);
+                 ResultSet rs = psSel.executeQuery()) {
+
+                while (rs.next()) {
+                    int id = rs.getInt("reservation_id");
+                    String code = rs.getString("confirmation_code");
+                    String email = rs.getString("email");
+                    String phone = rs.getString("phone");
+                    Timestamp startTs = rs.getTimestamp("start_time");
+
+                    try (PreparedStatement psUpd = conn.prepareStatement(updateSql)) {
+                        psUpd.setInt(1, id);
+                        int rows = psUpd.executeUpdate();
+
+                        if (rows > 0) {
+                            canceled++;
+
+                            String startTime = (startTs == null)
+                                    ? ""
+                                    : startTs.toLocalDateTime().toLocalTime().toString();
+
+                            String msg =
+                                    "Your Bistro reservation (" + code + ") was canceled because you did not arrive within 15 minutes of " +
+                                    startTime + ".";
+
+                            if (email != null && !email.isBlank()) {
+                                notifier.sendEmail(email, "Bistro Reservation Canceled", msg);
+                            }
+                            if (phone != null && !phone.isBlank()) {
+                                notifier.sendSms(phone, msg);
+                            }
+                         // If this reservation came from waiting list (WLxxxx), mark waiting_list as EXPIRED
+                            if (code != null && code.startsWith("WL")) {
+                                try (PreparedStatement psW =
+                                        conn.prepareStatement("UPDATE waiting_list SET status='EXPIRED' WHERE confirmation_code=? AND status='INVITED'")) {
+                                    psW.setString(1, code);
+                                    psW.executeUpdate();
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+
+            conn.commit();
+            conn.setAutoCommit(oldAuto);
+            return canceled;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            try {
+                if (pConn != null) pConn.getConnection().rollback();
+            } catch (Exception ignored) {}
+            return 0;
+
+        } finally {
+            try {
+                if (pConn != null) pConn.getConnection().setAutoCommit(true);
+            } catch (Exception ignored) {}
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+    
+ // ============================================================
+ // WAITING LIST -> AUTO INVITE (create a real reservation WLxxxx)
+ // ============================================================
+
+ /**
+  * Finds the oldest WAITING entry that can fit an available table RIGHT NOW,
+  * marks it INVITED (15 min window), creates an ACTIVE reservation with code WLxxxx,
+  * and sends email/sms.
+  *
+  * Returns how many invites were created in this run (usually 0..N).
+  */
+    public int processWaitingListInvites(NotificationService notifier) {
+        PooledConnection pConn = null;
+        int invitedCount = 0;
+
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            boolean oldAuto = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+
+            try {
+                // Repeat a few times: there might be more than one free table right now
+                for (int loop = 0; loop < 10; loop++) {
+
+                    LocalDateTime now = LocalDateTime.now();
+
+                    // ✅ 1) Only invite during opening hours AND only if there is time for a full 2h seating
+                    HoursRange hours = getOpeningHoursOrDefault(conn, now.toLocalDate());
+                    LocalTime open = hours.open;
+                    LocalTime close = hours.close;
+
+                    LocalTime nowT = now.toLocalTime();
+                    LocalTime endT = now.plusHours(2).toLocalTime();
+
+                    // Not open now
+                    if (nowT.isBefore(open) || nowT.isAfter(close)) {
+                        break; // outside working hours -> stop sending invites
+                    }
+
+                    // Not enough time left for 2 hours before closing
+                    if (endT.isAfter(close)) {
+                        break; // too close to closing -> stop invites
+                    }
+
+                    WaitingCandidate cand = getOldestWaitingCandidateForUpdate(conn);
+                    if (cand == null) break;
+
+                    // ✅ 2) Find a table available for the FULL window: [now, now+2h]
+                    Integer tableNum = findBestAvailableTable(conn, now, cand.diners);
+                    if (tableNum == null) {
+                        // No table for this candidate right now -> stop (don’t skip them)
+                        break;
+                    }
+
+                    // Mark waiting row INVITED + assign table + expires
+                    if (!markWaitingInvited(conn, cand.id, tableNum)) {
+                        // someone else took it (race) -> retry loop
+                        continue;
+                    }
+
+                    // Create a real reservation using the SAME waiting code (WLxxxx)
+                    boolean created = createReservationFromWaiting(conn, cand, tableNum, now);
+                    if (!created) {
+                        // rollback this invite if reservation insert failed
+                        markWaitingExpired(conn, cand.code);
+                        conn.commit();
+                        continue;
+                    }
+
+                    conn.commit(); // commit before sending email/sms
+
+                    // Notify
+                    String msg =
+                        "A table is now available for you at Bistro.\n" +
+                        "Please arrive within 15 minutes.\n" +
+                        "Your waiting code: " + cand.code + "\n" +
+                        "Table: " + tableNum;
+
+                    if (cand.email != null && !cand.email.isBlank()) {
+                        notifier.sendEmail(cand.email, "Bistro – Table is Ready", msg);
+                    }
+                    if (cand.phone != null && !cand.phone.isBlank()) {
+                        notifier.sendSms(cand.phone, msg);
+                    }
+
+                    invitedCount++;
+                    conn.setAutoCommit(false); // keep loop safe
+                }
+
+                conn.setAutoCommit(oldAuto);
+                return invitedCount;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                try { conn.rollback(); } catch (Exception ignored) {}
+                try { conn.setAutoCommit(oldAuto); } catch (Exception ignored) {}
+                return invitedCount;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return invitedCount;
+        } finally {
+            if (pConn != null) pool.releaseConnection(pConn);
+        }
+    }
+
+    private boolean isWithinWorkingHoursNow(Connection conn) throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+
+        HoursRange hours = getOpeningHoursOrDefault(conn, now.toLocalDate());
+        LocalTime open = hours.open;
+        LocalTime close = hours.close;
+
+        LocalTime t = now.toLocalTime();
+
+        // open <= now <= close
+        return !t.isBefore(open) && !t.isAfter(close);
+    }
+
+ private WaitingCandidate getOldestWaitingCandidateForUpdate(Connection conn) throws SQLException {
+     // IMPORTANT: your join methods currently insert status NULL -> so we treat NULL as WAITING.
+     String sql =
+         "SELECT id, diners_number, confirmation_code, subscriber_number, guest_phone, guest_email " +
+         "FROM waiting_list " +
+         "WHERE (status IS NULL OR status='' OR status='WAITING') " +
+         "ORDER BY request_time ASC " +
+         "LIMIT 1 FOR UPDATE";
+
+     try (PreparedStatement ps = conn.prepareStatement(sql);
+          ResultSet rs = ps.executeQuery()) {
+
+         if (!rs.next()) return null;
+
+         WaitingCandidate c = new WaitingCandidate();
+         c.id = rs.getInt("id");
+         c.diners = rs.getInt("diners_number");
+         c.code = rs.getString("confirmation_code");
+         c.subscriberNumber = rs.getString("subscriber_number");
+
+         // start with guest fields
+         c.phone = rs.getString("guest_phone");
+         c.email = rs.getString("guest_email");
+
+         // If subscriber and email/phone empty -> try take from users table
+         if (c.subscriberNumber != null && !c.subscriberNumber.isBlank()) {
+             fillSubscriberContactIfMissing(conn, c);
+         }
+
+         // normalize nulls
+         if (c.phone == null) c.phone = "";
+         if (c.email == null) c.email = "";
+
+         return c;
+     }
+ }
+
+ private void fillSubscriberContactIfMissing(Connection conn, WaitingCandidate c) throws SQLException {
+     String sql =
+         "SELECT u.email, u.phone " +
+         "FROM subscribers s " +
+         "JOIN users u ON u.id = s.user_id " +
+         "WHERE s.subscriber_number = ? " +
+         "LIMIT 1";
+
+     try (PreparedStatement ps = conn.prepareStatement(sql)) {
+         ps.setString(1, c.subscriberNumber);
+         try (ResultSet rs = ps.executeQuery()) {
+             if (rs.next()) {
+                 String e = rs.getString("email");
+                 String p = rs.getString("phone");
+                 if ((c.email == null || c.email.isBlank()) && e != null) c.email = e;
+                 if ((c.phone == null || c.phone.isBlank()) && p != null) c.phone = p;
+             }
+         }
+     }
+ }
+
+ private Integer findBestAvailableTableNow(Connection conn, LocalDateTime now, int diners) throws SQLException {
+     LocalDateTime end = now.plusHours(2);
+
+     String sql =
+         "SELECT t.table_number " +
+         "FROM restaurant_tables t " +
+         "WHERE t.capacity >= ? " +
+         "AND NOT EXISTS ( " +
+         "  SELECT 1 FROM reservations r " +
+         "  WHERE r.status IN ('ACTIVE','CHECKED_IN') " +
+         "    AND r.table_number = t.table_number " +
+         "    AND r.start_time < ? AND r.end_time > ? " +
+         ") " +
+         "ORDER BY t.capacity ASC, t.table_number ASC " +
+         "LIMIT 1";
+
+     try (PreparedStatement ps = conn.prepareStatement(sql)) {
+         ps.setInt(1, diners);
+         ps.setTimestamp(2, Timestamp.valueOf(end));
+         ps.setTimestamp(3, Timestamp.valueOf(now));
+         try (ResultSet rs = ps.executeQuery()) {
+             if (rs.next()) return rs.getInt(1);
+         }
+     }
+     return null;
+ }
+
+ private boolean markWaitingInvited(Connection conn, int waitingId, int tableNum) throws SQLException {
+     String sql =
+         "UPDATE waiting_list " +
+         "SET status='INVITED', invited_at=NOW(), expires_at=(NOW() + INTERVAL 15 MINUTE), assigned_table=? " +
+         "WHERE id=? AND (status IS NULL OR status='' OR status='WAITING')";
+
+     try (PreparedStatement ps = conn.prepareStatement(sql)) {
+         ps.setInt(1, tableNum);
+         ps.setInt(2, waitingId);
+         return ps.executeUpdate() == 1;
+     }
+ }
+
+ private boolean createReservationFromWaiting(Connection conn, WaitingCandidate c, int tableNum, LocalDateTime now) throws SQLException {
+     // Create reservation for NOW->NOW+2h with the waiting code (WLxxxx).
+     // subscriber_number in reservations is VARCHAR in your system (SUB123 or null) -> we use it directly.
+
+     String sql =
+         "INSERT INTO reservations " +
+         "(dinners_number, confirmation_code, status, table_number, subscriber_number, start_time, end_time, phone, email, created_at) " +
+         "VALUES (?, ?, 'ACTIVE', ?, ?, ?, ?, ?, ?, NOW())";
+
+     try (PreparedStatement ps = conn.prepareStatement(sql)) {
+         ps.setInt(1, c.diners);
+         ps.setString(2, c.code);
+         ps.setInt(3, tableNum);
+
+         if (c.subscriberNumber == null || c.subscriberNumber.isBlank()) {
+             ps.setNull(4, Types.VARCHAR);
+         } else {
+             ps.setString(4, c.subscriberNumber);
+         }
+
+         ps.setTimestamp(5, Timestamp.valueOf(now));
+         ps.setTimestamp(6, Timestamp.valueOf(now.plusHours(2)));
+
+         ps.setString(7, c.phone == null ? "" : c.phone);
+         ps.setString(8, c.email == null ? "" : c.email);
+
+         return ps.executeUpdate() == 1;
+     }
+ }
+
+ private void markWaitingExpired(Connection conn, String waitingCode) throws SQLException {
+     String sql =
+         "UPDATE waiting_list " +
+         "SET status='EXPIRED' " +
+         "WHERE confirmation_code=? AND status='INVITED'";
+     try (PreparedStatement ps = conn.prepareStatement(sql)) {
+         ps.setString(1, waitingCode);
+         ps.executeUpdate();
+     }
+ }
+
+ private static class WaitingCandidate {
+     int id;
+     int diners;
+     String code;
+     String subscriberNumber;
+     String phone;
+     String email;
+ }
+ public int sendReservationReminders(NotificationService notifier) {
+	    PooledConnection pConn = null;
+	    int sent = 0;
+
+	    String selectSql = 
+	    	    "SELECT reservation_id, confirmation_code, email, start_time " +
+	    	    "FROM reservations " +
+	    	    "WHERE status='ACTIVE' " +
+	    	    "  AND reminder_sent_at IS NULL " +
+	    	    "  AND email IS NOT NULL AND email <> '' " +
+	    	    "  AND start_time BETWEEN (NOW() + INTERVAL 120 MINUTE) AND (NOW() + INTERVAL 121 MINUTE)";
+
+	    
+	    String updateSql =
+	        "UPDATE reservations " +
+	        "SET reminder_sent_at = NOW() " +
+	        "WHERE reservation_id = ? AND reminder_sent_at IS NULL";
+
+	    try {
+	        pConn = pool.getConnection();
+	        Connection conn = pConn.getConnection();
+
+	        boolean oldAuto = conn.getAutoCommit();
+	        conn.setAutoCommit(false);
+
+	        try (PreparedStatement psSel = conn.prepareStatement(selectSql);
+	             ResultSet rs = psSel.executeQuery()) {
+
+	            while (rs.next()) {
+	                int id = rs.getInt("reservation_id");
+	                String code = rs.getString("confirmation_code");
+	                String email = rs.getString("email");
+	                Timestamp startTs = rs.getTimestamp("start_time");
+
+	                // mark as sent first (so even if email fails, you won't spam)
+	                try (PreparedStatement psUpd = conn.prepareStatement(updateSql)) {
+	                    psUpd.setInt(1, id);
+	                    int rows = psUpd.executeUpdate();
+	                    if (rows <= 0) continue;
+	                }
+
+	                conn.commit();
+
+	                String startTime = startTs.toLocalDateTime().toLocalTime().toString();
+	                String msg =
+	                    "Reminder: you have a Bistro reservation in 2 hours.\n" +
+	                    "Time: " + startTime + "\n" +
+	                    "Confirmation code: " + code + "\n\n" +
+	                    "Please arrive on time. Check-in is available at the reservation time.";
+
+	                notifier.sendEmail(email, "Bistro – Reservation Reminder", msg);
+	                sent++;
+
+	                conn.setAutoCommit(false); // continue safely
+	            }
+
+	            conn.setAutoCommit(oldAuto);
+	            return sent;
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            try { conn.rollback(); } catch (Exception ignored) {}
+	            try { conn.setAutoCommit(oldAuto); } catch (Exception ignored) {}
+	            return sent;
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return sent;
+	    } finally {
+	        if (pConn != null) pool.releaseConnection(pConn);
+	    }
+	}
+
+
+
 
 }
-
-

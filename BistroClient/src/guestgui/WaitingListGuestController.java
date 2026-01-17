@@ -12,7 +12,7 @@ public class WaitingListGuestController {
     @FXML private TextField txtDiners;
     @FXML private TextField txtPhone;
     @FXML private TextField txtEmail;
-    @FXML private TextField txtCode;   // בשביל Leave לפי קוד
+    @FXML private TextField txtCode;
     @FXML private Label lblStatus;
 
     private ClientController client;
@@ -25,39 +25,9 @@ public class WaitingListGuestController {
             lblStatus.setStyle("");
         }
 
-        ClientSession.activeHandler = (msg) -> {
-            if (!(msg instanceof String s)) return;
-            System.out.println("CLIENT <- " + s);
-
-            Platform.runLater(() -> {
-                if (s.startsWith("WAITING_GUEST_JOIN_OK|")) {
-                    String code = extractAfterPipe(s);
-                    lblStatus.setText("Successfully added to waiting list. Code: " + code);
-                    lblStatus.setStyle("-fx-text-fill: #1B8F3A; -fx-font-weight: bold;");
-                    if (txtCode != null) txtCode.setText(code); // נוח להעתקה/Leave
-                    return;
-                }
-
-                if (s.startsWith("WAITING_GUEST_JOIN_FAIL")) {
-                    String reason = extractAfterPipe(s);
-                    lblStatus.setText("Failed to add: " + (reason.isBlank() ? "DB error" : reason));
-                    lblStatus.setStyle("-fx-text-fill: #C0392B; -fx-font-weight: bold;");
-                    return;
-                }
-
-                if (s.startsWith("WAITING_GUEST_LEAVE_OK")) {
-                    lblStatus.setText("Successfully removed from waiting list");
-                    lblStatus.setStyle("-fx-text-fill: #1B8F3A; -fx-font-weight: bold;");
-                    return;
-                }
-
-                if (s.startsWith("WAITING_GUEST_LEAVE_FAIL")) {
-                    String reason = extractAfterPipe(s);
-                    lblStatus.setText("Failed to remove: " + (reason.isBlank() ? "Not found" : reason));
-                    lblStatus.setStyle("-fx-text-fill: #C0392B; -fx-font-weight: bold;");
-                }
-            });
-        };
+        // ✅ do NOT set ClientSession.activeHandler here.
+        // Each action (Join/Leave) sets its own handler and clears it after a reply.
+        ClientSession.activeHandler = null;
     }
 
     @FXML
@@ -82,6 +52,49 @@ public class WaitingListGuestController {
         }
 
         showInfo("Sending join request...");
+
+        // ✅ set handler for THIS request only
+        ClientSession.activeHandler = (msg) -> {
+            if (!(msg instanceof String)) return;
+            String s = (String) msg;
+
+            Platform.runLater(() -> {
+                try {
+                    System.out.println("CLIENT <- " + s);
+
+                    if (s.startsWith("WAITING_GUEST_JOIN_OK|")) {
+                        String code = extractAfterPipe(s);
+                        lblStatus.setText("Successfully added to waiting list. Code: " + code);
+                        lblStatus.setStyle("-fx-text-fill: #1B8F3A; -fx-font-weight: bold;");
+                        if (txtCode != null) txtCode.setText(code);
+                        return;
+                    }
+
+                    if (s.startsWith("WAITING_GUEST_JOIN_FAIL")) {
+                        String reason = extractAfterPipe(s);
+                        lblStatus.setText("Failed to add: " + (reason.isBlank() ? "DB error" : reason));
+                        lblStatus.setStyle("-fx-text-fill: #C0392B; -fx-font-weight: bold;");
+                        return;
+                    }
+
+                    // ✅ new server reply you should support
+                    if (s.equals("WAITING_CLOSED")) {
+                        lblStatus.setText("Restaurant is closed right now. Try again during opening hours.");
+                        lblStatus.setStyle("-fx-text-fill: #C0392B; -fx-font-weight: bold;");
+                        return;
+                    }
+
+                    // anything else
+                    lblStatus.setText("Unexpected server reply: " + s);
+                    lblStatus.setStyle("-fx-text-fill: #C0392B; -fx-font-weight: bold;");
+
+                } finally {
+                    // ✅ CRITICAL: clear handler so UI won’t “stick”
+                    ClientSession.activeHandler = null;
+                }
+            });
+        };
+
         client.joinWaitingListAsGuest(diners, phone, email);
     }
 
@@ -96,6 +109,39 @@ public class WaitingListGuestController {
         }
 
         showInfo("Sending leave request...");
+
+        // ✅ set handler for THIS request only
+        ClientSession.activeHandler = (msg) -> {
+            if (!(msg instanceof String)) return;
+            String s = (String) msg;
+
+            Platform.runLater(() -> {
+                try {
+                    System.out.println("CLIENT <- " + s);
+
+                    if (s.startsWith("WAITING_GUEST_LEAVE_OK")) {
+                        lblStatus.setText("Successfully removed from waiting list");
+                        lblStatus.setStyle("-fx-text-fill: #1B8F3A; -fx-font-weight: bold;");
+                        return;
+                    }
+
+                    if (s.startsWith("WAITING_GUEST_LEAVE_FAIL")) {
+                        String reason = extractAfterPipe(s);
+                        lblStatus.setText("Failed to remove: " + (reason.isBlank() ? "Not found" : reason));
+                        lblStatus.setStyle("-fx-text-fill: #C0392B; -fx-font-weight: bold;");
+                        return;
+                    }
+
+                    lblStatus.setText("Unexpected server reply: " + s);
+                    lblStatus.setStyle("-fx-text-fill: #C0392B; -fx-font-weight: bold;");
+
+                } finally {
+                    // ✅ CRITICAL
+                    ClientSession.activeHandler = null;
+                }
+            });
+        };
+
         client.leaveWaitingListAsGuest(code);
     }
 
@@ -103,7 +149,6 @@ public class WaitingListGuestController {
         lblStatus.setText(msg);
         lblStatus.setStyle("-fx-text-fill: #666666;");
     }
-    
 
     private void showError(String msg) {
         lblStatus.setText(msg);

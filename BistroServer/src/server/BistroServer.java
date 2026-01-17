@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 
 import common.ClientRequest;
 import common.LoginRequest;
@@ -32,6 +36,8 @@ public class BistroServer extends AbstractServer {
     
  // simple anti-spam cooldown: key=email|phone -> lastSentMillis
     private final Map<String, Long> forgotCooldown = new ConcurrentHashMap<>();
+    
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     // For now: prints "sent" to server console (you can swap later to real Email/SMS)
     private final NotificationService notifier =
@@ -45,7 +51,27 @@ public class BistroServer extends AbstractServer {
     public BistroServer(int port, ServerMainController guiController) {
         super(port);
         this.guiController = guiController;
+ 
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                int reminders = db.sendReservationReminders(notifier);
+                if (reminders > 0) System.out.println("🔔 Reservation reminders sent: " + reminders);
+
+                int invited = db.processWaitingListInvites(notifier);
+                if (invited > 0) System.out.println("📨 Waiting list invites sent: " + invited);
+
+                int n = db.cancelNoShowReservations(notifier);
+                if (n > 0) System.out.println("⏰ Auto-canceled no-show reservations: " + n);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, 10, 60, TimeUnit.SECONDS);
+
+
+      
     }
+
 
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
@@ -224,10 +250,9 @@ public class BistroServer extends AbstractServer {
 
                         String code = db.joinWaitingListAsSubscriber(userId, diners, phone, email);
 
-                        if (code != null && !code.isBlank())
-                            client.sendToClient("WAITING_JOIN_OK|" + code);
-                        else
-                            client.sendToClient("WAITING_JOIN_FAIL|DB error");
+                        if ("CLOSED".equals(code)) client.sendToClient("WAITING_CLOSED");
+                        else if (code != null && !code.isBlank()) client.sendToClient("WAITING_JOIN_OK|" + code);
+                        else client.sendToClient("WAITING_JOIN_FAIL|DB error");
 
                         break;
                     }
@@ -253,10 +278,10 @@ public class BistroServer extends AbstractServer {
 
                         String code = db.joinWaitingListAsGuest(diners, phone, email);
 
-                        if (code != null && !code.isBlank())
-                            client.sendToClient("WAITING_GUEST_JOIN_OK|" + code);
-                        else
-                            client.sendToClient("WAITING_GUEST_JOIN_FAIL|DB error");
+                        if ("CLOSED".equals(code)) client.sendToClient("WAITING_CLOSED");
+                        else if (code != null && !code.isBlank()) client.sendToClient("WAITING_GUEST_JOIN_OK|" + code);
+                        else client.sendToClient("WAITING_GUEST_JOIN_FAIL|DB error");
+
 
                         break;
                     }
@@ -375,15 +400,16 @@ public class BistroServer extends AbstractServer {
                         String email = (params.length >= 5 && params[4] != null)
                                 ? params[4].toString() : "";
 
-                        String code = db.createReservation(
-                                dateTime, diners, customer, phone, email
-                        );
+                        String result = db.createReservation(dateTime, diners, customer, phone, email);
 
-                        client.sendToClient(
-                                (code != null && !code.isEmpty())
-                                        ? "RESERVATION_OK|" + code
-                                        : "RESERVATION_FAIL"
-                        );
+                        if ("FULL".equals(result)) {
+                            client.sendToClient("RESERVATION_FULL");
+                        } else if (result != null && !result.isBlank()) {
+                            client.sendToClient("RESERVATION_OK|" + result);
+                        } else {
+                            client.sendToClient("RESERVATION_FAIL");
+                        }
+
                         break;
                     }
 
@@ -607,4 +633,11 @@ public class BistroServer extends AbstractServer {
 
         System.out.println("❌ Client disconnected");
     }
+    
+    @Override
+    protected void serverStopped() {
+        System.out.println("🛑 Server stopped. Shutting down scheduler...");
+        scheduler.shutdownNow();
+    }
+
 }
