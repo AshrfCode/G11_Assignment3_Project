@@ -26,17 +26,6 @@
     </HBox>
 
     <HBox alignment="CENTER" spacing="12">
-        <Label text="Phone:" style="-fx-font-size: 14px;"/>
-        <TextField fx:id="txtPhone" promptText="05xxxxxxxx" prefWidth="180"/>
-    </HBox>
-
-
-    <HBox alignment="CENTER" spacing="12">
-        <Label text="Email:" style="-fx-font-size: 14px;"/>
-        <TextField fx:id="txtEmail" promptText="name@example.com" prefWidth="220"/>
-    </HBox>
-
-    <HBox alignment="CENTER" spacing="12">
         <Button text="Join Waiting List" onAction="#handleJoin" prefWidth="160"/>
         <Button text="Leave" onAction="#handleLeave" prefWidth="100"/>
     </HBox>
