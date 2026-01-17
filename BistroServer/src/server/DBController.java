@@ -112,7 +112,7 @@ public class DBController {
 	    ArrayList<String> codes = new ArrayList<>();
 	
 	    
-	    // 1. We match subscriber.id with the userId you sent
+	    // 1. We match subscriber.id with the userId
 	    // 2. We match subscriber.subscriber_number with reservations.subscriber_number
 	    String sql = "SELECT r.confirmation_code " +
 	                 "FROM reservations r " +
@@ -1923,8 +1923,15 @@ public class DBController {
 
         LocalTime t = now.toLocalTime();
 
-        // open <= now <= close
-        return !t.isBefore(open) && !t.isAfter(close);
+        // Check if the shift crosses midnight (e.g., Open 18:00, Close 02:00)	
+        if (close.isBefore(open)) {
+            // Valid if: Time is AFTER open (18:00-23:59) OR BEFORE close (00:00-02:00)
+            return !t.isBefore(open) || !t.isAfter(close);
+        } else {
+            // Standard day (e.g., Open 10:00, Close 22:00)
+            // Valid if: Time is between open and close
+            return !t.isBefore(open) && !t.isAfter(close);
+        }
     }
 
  private WaitingCandidate getOldestWaitingCandidateForUpdate(Connection conn) throws SQLException {
