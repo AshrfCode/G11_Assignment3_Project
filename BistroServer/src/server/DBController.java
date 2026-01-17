@@ -1116,11 +1116,6 @@ public class DBController {
                 }
             }
 
-            // must be CHECKED_IN to pay
-            if (!"CHECKED_IN".equalsIgnoreCase(status)) {
-                return "PREVIEW_FAIL|Reservation is not ACTIVE (already paid/canceled)";
-            }
-
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime start = startTs.toLocalDateTime();
             LocalDateTime end = endTs.toLocalDateTime();
@@ -1130,6 +1125,11 @@ public class DBController {
             }
             if (now.isAfter(end)) {
                 return "PREVIEW_FAIL|Payment window expired (more than 2 hours)";
+            }
+            
+            // must be CHECKED_IN to pay
+            if (!"CHECKED_IN".equalsIgnoreCase(status)) {
+                return "PREVIEW_FAIL|You must check in first in order to pay";
             }
 
             double total = diners * 100.0;
