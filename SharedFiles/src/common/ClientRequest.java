@@ -35,6 +35,7 @@ public class ClientRequest implements Serializable {
 	     public static final String CMD_GET_MONTHLY_TIME_REPORT = "GET_MONTHLY_TIME_REPORT";
 	     public static final String CMD_GET_SUBSCRIBER_REPORT = "GET_SUBSCRIBER_REPORT";
 	     public static final String CMD_GET_ALL_RESERVATIONS = "GET_ALL_RESERVATIONS";
+	     public static final String CMD_GET_SUBSCRIBER_CODES = "GET_SUBSCRIBER_CODES";
 
 
     private String command;

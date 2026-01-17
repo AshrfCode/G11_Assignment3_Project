@@ -151,6 +151,12 @@ public class ClientController extends AbstractClient {
         ));
     }
     
+    public void fetchSubscriberCodes(int userId) {
+        sendRequest(new ClientRequest(ClientRequest.CMD_GET_SUBSCRIBER_CODES, 
+            new Object[] { userId } 
+        ));
+    }
+    
     public void checkInCustomer(String confirmationCode) {
         sendRequest(new ClientRequest(ClientRequest.CMD_CHECK_IN, 
                 new Object[]{confirmationCode}));

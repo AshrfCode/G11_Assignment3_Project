@@ -7,6 +7,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.control.ListView?>
 
 <VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -21,6 +22,11 @@
             <Font name="System Bold" size="24.0" />
         </font>
     </Label>
+    
+    <VBox fx:id="quickSelectBox" alignment="CENTER" spacing="5" managed="false" visible="false">
+        <Label text="Tap a code to select:" textFill="#2196F3" style="-fx-font-weight: bold;"/>
+        <ListView fx:id="codeList" prefHeight="100.0" maxWidth="300.0" />
+    </VBox>
 
     <Label text="Please enter your confirmation code to get your table:"
            style="-fx-font-size: 14px;" />

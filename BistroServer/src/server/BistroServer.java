@@ -1,13 +1,13 @@
 package server;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 
 import common.ClientRequest;
 import common.LoginRequest;
@@ -167,7 +167,20 @@ public class BistroServer extends AbstractServer {
                 Object[] params = request.getParams();
 
                 switch (command) {
+                	
+                case ClientRequest.CMD_GET_SUBSCRIBER_CODES: {
+                    Object[] data = (Object[]) request.getParams(); // or getParameters()
 
+                
+                    if (data != null && data.length > 0 && data[0] instanceof Integer) { // Check for Integer again
+                        int userId = (int) data[0]; 
+                        
+
+                        ArrayList<String> codes = db.getSubscriberActiveCodes(userId);
+                        client.sendToClient(codes);
+                    }
+                    break;
+                }
 
                     case "UPDATE_ORDER_DATE": {
                         int orderId = Integer.parseInt(params[0].toString());
@@ -206,6 +219,8 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(list);
                         break;
                     }
+                    
+                  
                     
                     case ClientRequest.CMD_GET_OPENING_HOURS: {
                         client.sendToClient(db.getOpeningHours());

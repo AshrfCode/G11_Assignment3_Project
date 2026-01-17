@@ -107,7 +107,42 @@ public class DBController {
             pool.releaseConnection(pConn);
         }
     }
-
+    
+    public ArrayList<String> getSubscriberActiveCodes(int userId) {
+	    ArrayList<String> codes = new ArrayList<>();
+	
+	    
+	    // 1. We match subscriber.id with the userId you sent
+	    // 2. We match subscriber.subscriber_number with reservations.subscriber_number
+	    String sql = "SELECT r.confirmation_code " +
+	                 "FROM reservations r " +
+	                 "JOIN subscribers s ON r.subscriber_number = s.subscriber_number " +
+	                 "WHERE s.user_id = ? " +  
+	                 "AND DATE(r.start_time) = CURDATE() " + 
+	                 "AND r.status = 'ACTIVE'";
+	
+	    PooledConnection pConn = null;
+	    try {
+	        pConn = pool.getConnection();
+	        Connection conn = pConn.getConnection();
+	
+	        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+	            stmt.setInt(1, userId); // Now we can safely use the int ID!
+	            
+	            try (ResultSet rs = stmt.executeQuery()) {
+	                while (rs.next()) {
+	                    codes.add(rs.getString("confirmation_code"));
+	                }
+	            }
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        if (pConn != null) pool.releaseConnection(pConn);
+	    }
+	    return codes;
+	}
+    
     // ------------------------------------------------------------
     // UPDATE NUMBER OF GUESTS
     // ------------------------------------------------------------
@@ -2113,7 +2148,7 @@ public class DBController {
 	    }
 	}
 
-
+ 	
 
 
 }

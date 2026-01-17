@@ -3,13 +3,26 @@ package guestgui;
 import client.ClientController;
 import client.ClientSession;
 import javafx.application.Platform;
+import java.util.List;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 
 public class CheckInController {
 
     @FXML private TextField codeField;
     @FXML private Label statusLabel;
+    
+    @FXML private VBox quickSelectBox;
+    @FXML private ListView<String> codeList;
 
     private ClientController client;
 
@@ -23,6 +36,41 @@ public class CheckInController {
 
     public void setClient(ClientController client) {
         this.client = client;
+    }
+    
+    /**
+     * ✅ NEW METHOD: Call this ONLY from SubscriberGUI.
+     * If the user has active reservations, show them.
+     */
+    public void setSubscriberReservations(List<String> activeCodes) {
+        if (activeCodes == null || activeCodes.isEmpty()) {
+            // Keep hidden if no codes
+            quickSelectBox.setVisible(false);
+            quickSelectBox.setManaged(false);
+            return;
+        }
+
+        // Show the list
+        quickSelectBox.setVisible(true);
+        quickSelectBox.setManaged(true);
+
+        ObservableList<String> items = FXCollections.observableArrayList(activeCodes);
+        codeList.setItems(items);
+
+        // Listener: When a user clicks a code, fill the text field
+        codeList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                codeField.setText(newVal);
+                setStatus(""); // Clear previous errors
+            }
+        });
+        
+        // Optional Perk: Double-click to auto-submit
+        codeList.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && codeList.getSelectionModel().getSelectedItem() != null) {
+                 handleCheckIn();
+            }
+        });
     }
 
     @FXML

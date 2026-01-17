@@ -1,9 +1,12 @@
 package subscribergui;
 
+import java.net.URL;
+
 import client.ClientController;
 import client.ClientSession;
 import guestgui.CancelReservationController;
 import guestgui.ReservationController;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -12,8 +15,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-
-import java.net.URL;
 
 public class SubscriberMainController {
 
@@ -171,30 +172,43 @@ public class SubscriberMainController {
 
     @FXML
     private void showCheckIn() {
+
         setSection("Check In");
         try {
             ClientSession.activeHandler = null;
 
-            // ✅ Try both names to avoid “resource not found”
+            // 1. Load FXML
             URL url = getClass().getResource("/guestgui/CheckIn.fxml");
             if (url == null) url = getClass().getResource("/guestgui/CheckInView.fxml");
-
-            if (url == null) {
-                throw new IllegalStateException(
-                        "CheckIn FXML not found. Expected: /guestgui/CheckIn.fxml (or /guestgui/CheckInView.fxml). " +
-                        "Make sure the file is inside the guestgui folder under src and named exactly the same."
-                );
-            }
+            if (url == null) throw new IllegalStateException("CheckIn FXML not found.");
 
             FXMLLoader loader = new FXMLLoader(url);
             Parent view = loader.load();
 
             guestgui.CheckInController controller = loader.getController();
             controller.setClient(client);
+
+            // ✅ USE SIMPLE VARIABLES (No Subscriber Entity)
+            // Assuming 'subscriberEmail' and 'subscriberPhone' are fields in this class
             controller.setPrefill(subscriberEmail, subscriberPhone);
 
+            // 2. Set up the handler to receive the codes
+            ClientSession.activeHandler = (msg) -> Platform.runLater(() -> {
+                if (msg instanceof java.util.ArrayList) {
+                    java.util.ArrayList<String> codes = (java.util.ArrayList<String>) msg;
+                    
+                    // Show the list in the UI
+                    controller.setSubscriberReservations(codes);
+                }
+            });
+
+            // 3. Send Request using your ID variable
+            client.fetchSubscriberCodes(subscriberId); 
+
             contentArea.getChildren().setAll(view);
+            
         } catch (Exception e) {
+            System.out.println("EXCEPTION in showCheckIn:"); 
             e.printStackTrace();
             setPlaceholder("❌ Failed to load check-in screen.");
         }
