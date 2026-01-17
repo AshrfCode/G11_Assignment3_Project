@@ -1,0 +1,173 @@
+/* =========================
+   ManageTablesView.css
+   Unified restaurant theme
+   Mint + Peach + Green focus
+========================= */
+
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: #FFFFFF;
+}
+
+.content-pane {
+    -fx-background-color: #FFFFFF;
+}
+
+/* ===== Labels ===== */
+.label {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 13px;
+}
+
+/* ===== Inputs ===== */
+.text-field,
+.combo-box {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #B8CDC9;
+    -fx-border-width: 2;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+    -fx-padding: 8 12;
+    -fx-font-size: 14px;
+}
+
+/* remove inner borders (fix double frame) */
+.combo-box .text-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0 8;
+}
+
+.combo-box-base .arrow-button {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+/* focus – green highlight */
+.text-field:focused,
+.combo-box:focused {
+    -fx-border-color: #2F7F73;
+    -fx-effect: dropshadow(
+        three-pass-box,
+        rgba(47,127,115,0.45),
+        8,
+        0,
+        0,
+        2
+    );
+}
+
+/* ===== TableView ===== */
+.table-view {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #B8CDC9;
+    -fx-border-width: 2;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+    -fx-padding: 10;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #F4FAF8;
+    -fx-background-radius: 14 14 0 0;
+    -fx-padding: 8;
+}
+
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #D7E4E1 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-weight: bold;
+}
+
+/* Rows */
+.table-row-cell {
+    -fx-background-color: #FFFFFF;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #FBFEFD;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: #F1F7F6;
+}
+
+/* Selected – very light peach (text stays dark) */
+.table-row-cell:selected {
+    -fx-background-color: rgba(247, 189, 154, 0.35);
+}
+
+.table-row-cell:selected .text {
+    -fx-fill: #2F3F3E;
+}
+
+/* Cells */
+.table-cell {
+    -fx-padding: 10 12;
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 13px;
+}
+
+/* Focus ring for table */
+.table-view:focused {
+    -fx-border-color: #2F7F73;
+    -fx-effect: dropshadow(
+        three-pass-box,
+        rgba(47,127,115,0.35),
+        8, 0, 0, 2
+    );
+}
+
+/* Scrollbar */
+.table-view .scroll-bar .thumb {
+    -fx-background-color: rgba(184,205,201,0.95);
+    -fx-background-radius: 10;
+}
+
+/* ===== Buttons (base) ===== */
+.button {
+    -fx-background-radius: 18;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 10 18;
+}
+
+/* Default: Mint (Add/Update/Refresh) */
+.button {
+    -fx-background-color: #A9C0BC;
+    -fx-text-fill: #2F3F3E;
+}
+
+.button:hover {
+    -fx-background-color: derive(#A9C0BC, -8%);
+}
+
+.button:pressed {
+    -fx-background-color: derive(#A9C0BC, -14%);
+}
+
+/* Delete – Peach (use styleClass="danger-btn" on Delete button for best control) */
+.button.danger-btn {
+    -fx-background-color: #F7BD9A;
+    -fx-text-fill: #4A2E1F;
+}
+
+.button.danger-btn:hover {
+    -fx-background-color: derive(#F7BD9A, -8%);
+}
+
+.button.danger-btn:pressed {
+    -fx-background-color: derive(#F7BD9A, -14%);
+}
+
+/* ===== Message label ===== */
+#msgLabel {
+    -fx-text-fill: #3F5654;
+    -fx-font-weight: bold;
+}

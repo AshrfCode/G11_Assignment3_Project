@@ -1,0 +1,102 @@
+/* =========================
+   VisualReportsMenuView.css
+   Unified restaurant theme
+   Mint + Peach + Green focus
+========================= */
+
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: #FFFFFF;
+}
+
+.content-pane {
+    -fx-background-color: #FFFFFF;
+}
+
+/* ===== Labels ===== */
+.label {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 13px;
+}
+
+/* optional: if you change the title label to styleClass="title" */
+.label.title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2F3F3E;
+}
+
+/* ===== Base buttons ===== */
+.button {
+    -fx-background-radius: 18;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 10 18;
+}
+
+/* ===== Report card buttons ===== */
+.button.report-card-btn {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #B8CDC9;
+    -fx-border-width: 2;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 14px;
+    -fx-alignment: CENTER;
+
+    -fx-padding: 18;
+}
+
+/* icon label inside the button */
+.button.report-card-btn .label {
+    -fx-text-fill: #2F3F3E;
+}
+
+/* hover: soft mint lift */
+.button.report-card-btn:hover {
+    -fx-border-color: #2F7F73;
+    -fx-effect: dropshadow(
+        three-pass-box,
+        rgba(47,127,115,0.25),
+        14,
+        0,
+        0,
+        3
+    );
+    -fx-background-color: #F4FAF8;
+}
+
+/* pressed: peach tint (same theme) */
+.button.report-card-btn:pressed {
+    -fx-background-color: #FDF2EC; /* very light peach */
+    -fx-border-color: derive(#F7BD9A, -10%);
+    -fx-effect: dropshadow(
+        three-pass-box,
+        rgba(247,189,154,0.25),
+        10,
+        0,
+        0,
+        2
+    );
+}
+
+/* keyboard focus: green ring */
+.button.report-card-btn:focused {
+    -fx-border-color: #2F7F73;
+    -fx-effect: dropshadow(
+        three-pass-box,
+        rgba(47,127,115,0.35),
+        10,
+        0,
+        0,
+        2
+    );
+}
+
+/* (Optional) if you use a statusLabel later */
+#statusLabel {
+    -fx-text-fill: #3F5654;
+    -fx-font-weight: bold;
+}

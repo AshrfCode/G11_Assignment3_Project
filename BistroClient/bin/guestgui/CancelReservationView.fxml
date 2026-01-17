@@ -7,14 +7,15 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="guestgui.CancelReservationController"
       spacing="12"
+       stylesheets="@CancelReservationView.css"
       style="-fx-padding: 18;">
 
-    <Label text="Cancel reservation"
+    <Label text="❌ Cancel reservation"
            style="-fx-font-size: 18; -fx-font-weight: bold;"/>
 
     <HBox spacing="10" alignment="CENTER_LEFT">
         <TextField fx:id="cancelCodeField" promptText="Confirmation code"/>
-        <Button text="Cancel" onAction="#handleCancel"/>
+        <Button text="Cancel" onAction="#handleCancel" styleClass="cancel-btn"/>
     </HBox>
 
     <Label fx:id="statusLabel" text=""/>

@@ -12,22 +12,23 @@
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane prefHeight="600.0" prefWidth="800.0" 
-            stylesheets="@representativeMain.css" 
             xmlns="http://javafx.com/javafx/21" 
             xmlns:fx="http://javafx.com/fxml/1" 
-            fx:controller="representativegui.SubscriberReportController">
+            fx:controller="representativegui.SubscriberReportController"
+            stylesheets="@SubscriberReportView.css"
+>
    
    <top>
-      <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #f4f4f4; -fx-border-color: #ddd; -fx-border-width: 0 0 1 0;">
+      <HBox alignment="CENTER_LEFT" spacing="15.0" styleClass="top-bar">
          <children>
-            <Button mnemonicParsing="false" onAction="#handleBack" text="⬅ Back" />
+            <Button text="⬅ Back" onAction="#handleBack" styleClass="back-btn"/>
             
-            <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Monthly Subscriber Report" />
+            <Label text="Monthly Subscriber Report" styleClass="title"/>
             
             <ComboBox fx:id="monthCombo" prefWidth="100.0" promptText="Month" />
             <ComboBox fx:id="yearCombo" prefWidth="100.0" promptText="Year" />
             
-            <Button mnemonicParsing="false" onAction="#loadData" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;" text="Generate" />
+            <Button text="Generate" onAction="#loadData" styleClass="generate-btn"/>
          </children>
          <padding>
             <Insets bottom="15.0" left="20.0" right="20.0" top="15.0" />

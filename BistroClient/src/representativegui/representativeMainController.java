@@ -119,9 +119,11 @@ public class representativeMainController {
     
     private VBox buildSpecialOpeningPane() {
 
+    	
+    	
         Label specialTitle = new Label("Special Opening (specific date)");
         specialTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-
+        
         VBox box = new VBox(10);
         box.setPadding(new Insets(10));
 
@@ -236,7 +238,13 @@ public class representativeMainController {
                 status
         );
 
-        box.setStyle("-fx-border-color: #cccccc; -fx-border-radius: 8; -fx-background-radius: 8;");
+        specialTitle.getStyleClass().add("section-title");
+        box.getStyleClass().add("section-card");
+        status.getStyleClass().add("opening-status");
+
+        saveBtn.getStyleClass().add("mint-btn");
+        loadBtn.getStyleClass().add("mint-btn");
+        deleteBtn.getStyleClass().add("peach-btn");
 
         return box;
     }
@@ -251,6 +259,11 @@ public class representativeMainController {
 
         // מסך ראשי: VBox שמכיל 2 אזורים (Specific + Weekly)
         VBox root = new VBox(15);
+        root.getStylesheets().add(
+        	    getClass().getResource("/representativegui/OpeningHoursView.css").toExternalForm()
+        	);
+        	root.getStyleClass().add("opening-root");
+
         root.setPadding(new Insets(10));
 
         // ---------------------------
@@ -265,13 +278,13 @@ public class representativeMainController {
         VBox specialBox = buildSpecialOpeningPane();
 
         specialBox.setPadding(new Insets(10));
-        specialBox.setStyle("-fx-border-color: #cccccc; -fx-border-radius: 8; -fx-background-radius: 8;");
-
+    
         // ---------------------------
         // B) WEEKLY (רגיל לפי יום)
         // ---------------------------
         Label weeklyTitle = new Label("Weekly Opening Hours (regular days)");
-        weeklyTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        weeklyTitle.getStyleClass().add("section-title");
+        
 
         ListView<String> weeklyList = new ListView<>();
         weeklyList.setPrefHeight(180);
@@ -296,8 +309,10 @@ public class representativeMainController {
 
         VBox weeklyBox = new VBox(10, weeklyTitle, weeklyList, form);
         weeklyBox.setPadding(new Insets(10));
-        weeklyBox.setStyle("-fx-border-color: #cccccc; -fx-border-radius: 8; -fx-background-radius: 8;");
+        weeklyBox.getStyleClass().add("section-card");
 
+        saveBtn.getStyleClass().add("mint-btn");
+        refreshBtn.getStyleClass().add("mint-btn");
         root.getChildren().addAll(specialBox, weeklyBox);
 
         contentArea.getChildren().clear();

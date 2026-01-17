@@ -1,0 +1,87 @@
+/* =========================
+   HistoryView.css
+   Same theme as ReservationView.css
+   Mint + Peach highlights
+========================= */
+
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: #FFFFFF;
+}
+
+/* ===== Top summary labels ===== */
+.label {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 13px;
+}
+
+/* numbers (counts) */
+#totalReservationsLabel,
+#visitsLabel {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2F7F73; /* mint/green emphasis */
+}
+
+/* ===== TableView ===== */
+.table-view {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #B8CDC9;
+    -fx-border-width: 2;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+}
+
+/* remove harsh inner border */
+.table-view .virtual-flow {
+    -fx-background-color: transparent;
+}
+
+/* ===== Table header ===== */
+.table-view .column-header-background {
+    -fx-background-color: #F5F9F8; /* very light mint */
+    -fx-border-color: #D7E4E1;
+    -fx-border-width: 0 0 2 0;
+}
+
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+}
+
+.table-view .column-header .label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2F3F3E;
+}
+
+/* ===== Table rows ===== */
+.table-row-cell {
+    -fx-background-color: transparent;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: rgba(247,189,154,0.25); /* 🍑 peach hover */
+}
+
+/* selected row */
+.table-row-cell:selected {
+    -fx-background-color: rgba(247,189,154,0.55); /* peach selected */
+}
+
+/* ===== Table cells ===== */
+.table-cell {
+    -fx-text-fill: #2F3F3E;
+    -fx-padding: 8 10;
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* ===== Status column coloring (optional, automatic if you set text) ===== */
+.table-cell:filled:selected {
+    -fx-text-fill: #4A2E1F;
+}
+
+/* ===== Bottom status label ===== */
+#statusLabel {
+    -fx-text-fill: #3F5654;
+    -fx-font-weight: bold;
+    -fx-padding: 6 0 0 0;
+}

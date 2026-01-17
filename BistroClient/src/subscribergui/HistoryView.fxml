@@ -6,7 +6,9 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="subscribergui.HistoryController"
-      spacing="10" prefWidth="900" prefHeight="600">
+      spacing="10" prefWidth="900" prefHeight="600"
+      stylesheets="@HistoryView.css"
+>
 
     <HBox spacing="20">
         <Label text="Reservations:" />

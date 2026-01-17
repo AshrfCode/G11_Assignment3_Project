@@ -6,9 +6,13 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="guestgui.ReservationController"
-      spacing="12" style="-fx-padding: 18;">
+      spacing="12"
+      style="-fx-padding: 18;"
+      stylesheets="@ReservationView.css">
 
-    <Label text="Reservation" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+   <Label text="🍽 Reservation "
+       style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
 
     <HBox spacing="10">
         <VBox spacing="6">
@@ -17,32 +21,36 @@
         </VBox>
 
         <VBox spacing="6">
-            <Label text="Diners"/>
+            <Label text="👥 Diners "/>
             <TextField fx:id="dinersField" promptText="e.g. 2"/>
         </VBox>
 
         <VBox spacing="6">
-            <Label text="Time (available slots)"/>
+            <Label text="⏰ Time (available slots)"/>
             <ComboBox fx:id="timeCombo" promptText="Choose or type time" editable="true"/>
         </VBox>
     </HBox>
 
-    <Button text="Check availability" onAction="#handleCheckAvailability"/>
+    <!-- ✅ same theme: check = peach -->
+    <Button text="Check availability"
+            onAction="#handleCheckAvailability"
+            styleClass="check-btn"/>
 
     <Separator/>
 
-    <Label text="Guest details" style="-fx-font-weight: bold;"/>
+    <Label text="👤 Guest details " style="-fx-font-weight: bold;"/>
 
     <HBox spacing="10" alignment="CENTER_LEFT">
-        <TextField fx:id="phoneField" promptText="Phone"/>
+        <TextField fx:id="phoneField" promptText="📞 Phone "/>
         <Label text="or"/>
-        <TextField fx:id="emailField" promptText="Email"/>
+        <TextField fx:id="emailField" promptText="✉ Email"/>
     </HBox>
 
     <HBox spacing="10">
-        <Button text="Reserve" onAction="#handleReserve"/>
-
-       
+        <!-- ✅ same theme: reserve = mint -->
+        <Button text="Reserve"
+                onAction="#handleReserve"
+                styleClass="reserve-btn"/>
     </HBox>
 
     <Label fx:id="statusLabel" text=""/>

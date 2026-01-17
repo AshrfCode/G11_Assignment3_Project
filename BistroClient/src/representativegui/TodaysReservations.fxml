@@ -8,15 +8,17 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="representativegui.TodaysReservationsController"
       spacing="15"
-      styleClass="content-pane">
+      styleClass="content-pane"
+      stylesheets="@TodaysReservationsView.css">
+
+
 
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
     <HBox alignment="CENTER_LEFT" spacing="10">
-        <Label text="Reservations Scheduled for Today" 
-               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #333;"/>
+        <Label text="Reservations Scheduled for Today" styleClass="title"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Button text="Refresh" fx:id="refreshBtn" styleClass="action-btn"/>
     </HBox>

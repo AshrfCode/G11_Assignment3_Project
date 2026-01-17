@@ -8,9 +8,11 @@
       fx:controller="guestgui.PaymentController"
       spacing="14"
       styleClass="card"
-      maxWidth="520">
+      maxWidth="520"
+      stylesheets="@PaymentView.css"
+>
 
-    <Label text="Pay Bill"
+    <Label text="Pay Bill 💰 "
            style="-fx-font-size: 22px; -fx-font-weight: bold;" />
 
     <Label text="Enter your reservation confirmation code to pay. (100₪ per diner)"
@@ -20,7 +22,7 @@
         <Label text="Confirmation code:"/>
         <TextField fx:id="codeField" promptText="e.g. 123456" prefWidth="160"/>
         <Button text="Find" onAction="#handleFind"/>
-		<Button fx:id="payBtn" text="Pay" onAction="#handlePay" disable="true"/>
+		<Button fx:id="payBtn" text="Pay 💲 " onAction="#handlePay" disable="true"/>
 
     </HBox>
 

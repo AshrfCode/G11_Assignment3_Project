@@ -1,0 +1,144 @@
+/* =========================
+   SubscriberReportView.css
+   Unified restaurant theme
+   Mint + Peach + Green focus
+========================= */
+
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: #FFFFFF;
+}
+
+/* ===== Labels ===== */
+.label {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 13px;
+}
+
+.label.title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* ===== Inputs (ComboBox like Reservation inputs) ===== */
+.combo-box {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #B8CDC9;
+    -fx-border-width: 2;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+    -fx-padding: 6 10;
+    -fx-font-size: 14px;
+}
+
+.combo-box:focused {
+    -fx-border-color: #2F7F73;
+    -fx-effect: dropshadow(
+        three-pass-box,
+        rgba(47,127,115,0.45),
+        8, 0, 0, 2
+    );
+}
+
+/* remove inner borders (avoid double frame) */
+.combo-box .text-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0 8;
+}
+
+/* arrow button clean */
+.combo-box-base .arrow-button {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+/* ===== Buttons (base) ===== */
+.button {
+    -fx-background-radius: 18;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 10 18;
+}
+
+/* Back – Peach */
+.button.back-btn {
+    -fx-background-color: #F7BD9A;
+    -fx-text-fill: #4A2E1F;
+}
+.button.back-btn:hover { -fx-background-color: derive(#F7BD9A, -8%); }
+.button.back-btn:pressed { -fx-background-color: derive(#F7BD9A, -14%); }
+
+/* Generate – Mint */
+.button.generate-btn {
+    -fx-background-color: #A9C0BC;
+    -fx-text-fill: #2F3F3E;
+}
+.button.generate-btn:hover { -fx-background-color: derive(#A9C0BC, -8%); }
+.button.generate-btn:pressed { -fx-background-color: derive(#A9C0BC, -14%); }
+
+/* ===== Top bar (if you switch from inline style to styleClass) ===== */
+.top-bar {
+    -fx-background-color: #F4FAF8;
+    -fx-border-color: #D7E4E1;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* ===== BarChart styling ===== */
+.chart {
+    -fx-background-color: #FFFFFF;
+}
+
+.chart-plot-background {
+    -fx-background-color: #FFFFFF;
+}
+
+.chart-content {
+    -fx-padding: 10;
+}
+
+/* grid lines */
+.chart-vertical-grid-lines,
+.chart-horizontal-grid-lines {
+    -fx-stroke: #D7E4E1;
+}
+
+.chart-alternative-row-fill {
+    -fx-fill: #FBFEFD;
+    -fx-stroke: transparent;
+}
+
+/* legend */
+.chart-legend {
+    -fx-background-color: transparent;
+}
+.chart-legend-item {
+    -fx-text-fill: #2F3F3E;
+}
+
+/* title */
+.chart-title {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+/* axis */
+.axis-label {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-weight: bold;
+}
+
+.axis-tick-label {
+    -fx-text-fill: #3F5654;
+}
+
+/* bars (keep clean, not neon) */
+.default-color0.chart-bar { -fx-bar-fill: #A9C0BC; }  /* mint */
+.default-color1.chart-bar { -fx-bar-fill: #F7BD9A; }  /* peach */
+
+/* ===== Status label ===== */
+#statusLabel {
+    -fx-text-fill: #3F5654;
+    -fx-font-weight: bold;
+}

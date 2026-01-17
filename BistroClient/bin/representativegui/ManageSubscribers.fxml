@@ -7,7 +7,10 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="representativegui.ManageSubscribersController"
       spacing="15"
-      style="-fx-padding: 20;">
+      style="-fx-padding: 20;"
+      stylesheets="@ManageSubscribersView.css"
+styleClass="content-pane"
+>
 
     <!-- ===== TITLE ===== -->
     <Label text="Manage Subscribers"
@@ -17,11 +20,13 @@
     <TableView fx:id="subscribersTable" prefHeight="420">
 
         <columns>
-            <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
-            <TableColumn fx:id="colName" text="Name" prefWidth="160"/>
-            <TableColumn fx:id="colEmail" text="Email" prefWidth="220"/>
-            <TableColumn fx:id="colPhone" text="Phone" prefWidth="140"/>
-            <TableColumn fx:id="colActive" text="Active" prefWidth="80"/>
+        	<TableColumn fx:id="colSubNumber" text="Sub Number" prefWidth="80"/>
+    		<TableColumn fx:id="colDigitalCard" text="Digital Card" prefWidth="80"/>
+            <TableColumn fx:id="colId" text="ID" prefWidth="40"/>
+            <TableColumn fx:id="colName" text="Name" prefWidth="60"/>
+            <TableColumn fx:id="colEmail" text="Email" prefWidth="140"/>
+            <TableColumn fx:id="colPhone" text="Phone" prefWidth="100"/>
+            <TableColumn fx:id="colActive" text="Active" prefWidth="60"/>
             <TableColumn fx:id="colCreatedAt" text="Created At" prefWidth="160"/>
         </columns>
 

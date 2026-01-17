@@ -7,7 +7,10 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="representativegui.ManageSubscribersController"
       spacing="15"
-      style="-fx-padding: 20;">
+      style="-fx-padding: 20;"
+      stylesheets="@ManageSubscribersView.css"
+styleClass="content-pane"
+>
 
     <!-- ===== TITLE ===== -->
     <Label text="Manage Subscribers"

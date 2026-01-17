@@ -9,11 +9,13 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 
-<BorderPane prefHeight="600.0" prefWidth="800.0" 
-            stylesheets="@representativeMain.css" 
-            xmlns="http://javafx.com/javafx/21" 
-            xmlns:fx="http://javafx.com/fxml/1" 
+<BorderPane prefHeight="600.0"
+            prefWidth="800.0"
+            stylesheets="@WLrepresentative.css"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="representativegui.WaitingListController">
+
 
     <top>
         <HBox alignment="CENTER_LEFT" spacing="20.0" style="-fx-background-color: #f4f4f4; -fx-padding: 15; -fx-border-color: #ddd; -fx-border-width: 0 0 1 0;">

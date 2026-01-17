@@ -10,24 +10,25 @@
       alignment="TOP_CENTER"
       spacing="18"
       prefWidth="800"
-      prefHeight="500">
+      prefHeight="500"
+      stylesheets="@WaitingListSubscriberView.css">
 
     <padding>
         <Insets top="40" right="40" bottom="40" left="40"/>
     </padding>
 
-    <Label text="Waiting List" style="-fx-font-size: 34px; -fx-font-weight: bold;"/>
+    <Label text="Waiting List" styleClass="title"/>
 
-    <Label fx:id="lblStatus" text="" style="-fx-font-size: 14px;"/>
+    <Label fx:id="lblStatus" text=""/>
 
     <HBox alignment="CENTER" spacing="12">
-        <Label text="Diners:" style="-fx-font-size: 14px;"/>
+        <Label text="Diners:"/>
         <TextField fx:id="txtDiners" promptText="e.g. 2" prefWidth="180"/>
     </HBox>
 
     <HBox alignment="CENTER" spacing="12">
-        <Button text="Join Waiting List" onAction="#handleJoin" prefWidth="160"/>
-        <Button text="Leave" onAction="#handleLeave" prefWidth="100"/>
+        <Button text="Join Waiting List" onAction="#handleJoin" prefWidth="160" styleClass="join-btn"/>
+        <Button text="Leave" onAction="#handleLeave" prefWidth="100" styleClass="leave-btn"/>
     </HBox>
 
 </VBox>

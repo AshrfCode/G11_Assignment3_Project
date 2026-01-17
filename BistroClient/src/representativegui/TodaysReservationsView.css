@@ -1,0 +1,142 @@
+/* =========================
+   TodaysReservationsView.css
+   Unified restaurant theme
+   Mint + Peach + Green focus
+========================= */
+
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: #FFFFFF;
+}
+
+/* main container */
+.content-pane {
+    -fx-background-color: #FFFFFF;
+}
+
+/* ===== Labels ===== */
+.label {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 13px;
+}
+
+/* (optional) if you change the title label to styleClass="title" */
+.label.title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* ===== Buttons ===== */
+.button {
+    -fx-background-radius: 18;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 10 18;
+}
+
+/* Refresh button – Mint */
+.button.action-btn {
+    -fx-background-color: #A9C0BC;
+    -fx-text-fill: #2F3F3E;
+}
+
+.button.action-btn:hover {
+    -fx-background-color: derive(#A9C0BC, -8%);
+}
+
+.button.action-btn:pressed {
+    -fx-background-color: derive(#A9C0BC, -14%);
+}
+
+/* ===== TableView ===== */
+.table-view {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #B8CDC9;
+    -fx-border-width: 2;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+    -fx-padding: 10;
+}
+
+/* Header */
+.table-view .column-header-background {
+    -fx-background-color: #F4FAF8;
+    -fx-background-radius: 14 14 0 0;
+    -fx-padding: 8;
+}
+
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #D7E4E1 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+/* Rows */
+.table-row-cell {
+    -fx-background-color: #FFFFFF;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #FBFEFD;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: #F1F7F6;
+}
+
+
+.table-row-cell:selected {
+    -fx-background-color: #CFE5E1;
+}
+
+.table-row-cell:selected .text {
+    -fx-fill: #2F3F3E;
+}
+
+/* Cells */
+.table-cell {
+    -fx-padding: 10 12;
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 13px;
+}
+
+/* Focus – green glow (like inputs) */
+.table-view:focused {
+    -fx-border-color: #2F7F73;
+    -fx-effect: dropshadow(
+        three-pass-box,
+        rgba(47,127,115,0.45),
+        8,
+        0,
+        0,
+        2
+    );
+}
+
+/* Scrollbar */
+.table-view .scroll-bar:vertical,
+.table-view .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+
+.table-view .scroll-bar .track {
+    -fx-background-color: transparent;
+}
+
+.table-view .scroll-bar .thumb {
+    -fx-background-color: rgba(184, 205, 201, 0.95);
+    -fx-background-radius: 10;
+}
+
+/* Status label */
+#statusLabel {
+    -fx-text-fill: #3F5654; /* theme friendly */
+    -fx-font-weight: bold;
+}

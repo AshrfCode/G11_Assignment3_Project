@@ -1,0 +1,92 @@
+/* =========================
+   WaitingListGuest.css
+   SAME THEME as ReservationView.css
+========================= */
+
+.page, .root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: #FFFFFF;
+}
+
+/* ===== Labels ===== */
+.label {
+    -fx-text-fill: #2F3F3E;
+    -fx-font-size: 13px;
+}
+
+/* Title (your 34px title) */
+.label.title {
+    -fx-font-size: 34px;
+    -fx-font-weight: bold;
+}
+
+/* ===== Inputs (unified) ===== */
+.text-field {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #B8CDC9;
+    -fx-border-width: 2;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+    -fx-padding: 8 12;
+    -fx-font-size: 14px;
+}
+
+/* focus – GREEN highlight (same as your Reservation) */
+.text-field:focused {
+    -fx-border-color: #2F7F73;
+    -fx-effect: dropshadow(
+        three-pass-box,
+        rgba(47,127,115,0.45),
+        8,
+        0,
+        0,
+        2
+    );
+}
+
+/* ===== Buttons ===== */
+.button {
+    -fx-background-radius: 18;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 10 18;
+}
+
+/* Join – mint/green */
+.button.join-btn {
+    -fx-background-color: #A9C0BC;
+    -fx-text-fill: #2F3F3E;
+}
+
+.button.join-btn:hover {
+    -fx-background-color: derive(#A9C0BC, -8%);
+}
+
+.button.join-btn:pressed {
+    -fx-background-color: derive(#A9C0BC, -14%);
+}
+
+/* Leave – peach */
+.button.leave-btn {
+    -fx-background-color: #F7BD9A;
+    -fx-text-fill: #4A2E1F;
+}
+
+.button.leave-btn:hover {
+    -fx-background-color: derive(#F7BD9A, -8%);
+}
+
+.button.leave-btn:pressed {
+    -fx-background-color: derive(#F7BD9A, -14%);
+}
+
+/* ===== Separator ===== */
+.separator .line {
+    -fx-border-color: #D7E4E1;
+}
+
+/* ===== Status label ===== */
+#lblStatus {
+    -fx-text-fill: #3F5654;
+    -fx-font-weight: bold;
+}
