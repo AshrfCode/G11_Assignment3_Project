@@ -2154,6 +2154,309 @@ public class DBController {
 	        if (pConn != null) pool.releaseConnection(pConn);
 	    }
 	}
+ 
+	//============================================================
+	//AUTO-CANCEL DUE TO MANAGER CHANGES (hours / tables) + notify
+	//============================================================
+	
+	private static class CancelNotice {
+	  final String email;
+	  final String phone;
+	  final String code;
+	  final LocalDateTime start;
+	  final String reason;
+	
+	  CancelNotice(String email, String phone, String code, LocalDateTime start, String reason) {
+	      this.email = email;
+	      this.phone = phone;
+	      this.code = code;
+	      this.start = start;
+	      this.reason = reason;
+	  }
+	}
+	
+	/**
+	* Cancels future reservations on a specific date that no longer fit inside CURRENT opening hours
+	* (special overrides first, then regular).
+	*
+	* @return number of canceled reservations
+	*/
+	public int cancelReservationsImpactedByDateHoursChange(String dateYYYYMMDD, NotificationService notifier, String reason) {
+	  PooledConnection pConn = null;
+	  int canceled = 0;
+	
+	  try {
+	      LocalDate date = LocalDate.parse(dateYYYYMMDD);
+	
+	      pConn = pool.getConnection();
+	      Connection conn = pConn.getConnection();
+	
+	      canceled = cancelOnDateOutsideCurrentHours(conn, date, notifier, reason);
+	      return canceled;
+	
+	  } catch (Exception e) {
+	      e.printStackTrace();
+	      return 0;
+	  } finally {
+	      if (pConn != null) pool.releaseConnection(pConn);
+	  }
+	}
+	
+	/**
+	* Cancels impacted future reservations for the next month for a weekly day (MONDAY, TUESDAY...).
+	* Uses CURRENT opening hours logic (special overrides first).
+	*
+	* @return number of canceled reservations
+	*/
+	public int cancelReservationsImpactedByWeeklyHoursChange(String dayName, NotificationService notifier, String reason) {
+	  PooledConnection pConn = null;
+	  int canceled = 0;
+	
+	  try {
+	      String targetDay = (dayName == null) ? "" : dayName.trim().toUpperCase();
+	
+	      pConn = pool.getConnection();
+	      Connection conn = pConn.getConnection();
+	
+	      LocalDate today = LocalDate.now();
+	      LocalDate end = today.plusMonths(1);
+	
+	      for (LocalDate d = today; !d.isAfter(end); d = d.plusDays(1)) {
+	          if (d.getDayOfWeek().toString().equals(targetDay)) {
+	              canceled += cancelOnDateOutsideCurrentHours(conn, d, notifier, reason);
+	          }
+	      }
+	
+	      return canceled;
+	
+	  } catch (Exception e) {
+	      e.printStackTrace();
+	      return 0;
+	  } finally {
+	      if (pConn != null) pool.releaseConnection(pConn);
+	  }
+	}
+	
+	/**
+	* Cancels future reservations assigned to a table that was removed.
+	*/
+	public int cancelFutureReservationsDueToTableRemoval(int tableNumber, NotificationService notifier, String reason) {
+	  PooledConnection pConn = null;
+	  int canceled = 0;
+	
+	  String selectSql =
+	      "SELECT reservation_id, confirmation_code, email, phone, start_time " +
+	      "FROM reservations " +
+	      "WHERE status='ACTIVE' AND start_time > NOW() AND table_number = ? " +
+	      "FOR UPDATE";
+	
+	  String updateSql =
+	      "UPDATE reservations SET status='CANCELED' " +
+	      "WHERE reservation_id=? AND status='ACTIVE'";
+	
+	  try {
+	      pConn = pool.getConnection();
+	      Connection conn = pConn.getConnection();
+	
+	      boolean oldAuto = conn.getAutoCommit();
+	      conn.setAutoCommit(false);
+	
+	      List<CancelNotice> notices = new ArrayList<>();
+	
+	      try (PreparedStatement psSel = conn.prepareStatement(selectSql)) {
+	          psSel.setInt(1, tableNumber);
+	
+	          try (ResultSet rs = psSel.executeQuery()) {
+	              while (rs.next()) {
+	                  int id = rs.getInt("reservation_id");
+	                  String code = rs.getString("confirmation_code");
+	                  String email = rs.getString("email");
+	                  String phone = rs.getString("phone");
+	                  Timestamp startTs = rs.getTimestamp("start_time");
+	                  LocalDateTime start = (startTs == null) ? null : startTs.toLocalDateTime();
+	
+	                  try (PreparedStatement psUpd = conn.prepareStatement(updateSql)) {
+	                      psUpd.setInt(1, id);
+	                      int rows = psUpd.executeUpdate();
+	                      if (rows > 0) {
+	                          canceled++;
+	                          notices.add(new CancelNotice(email, phone, code, start, reason));
+	                      }
+	                  }
+	              }
+	          }
+	      }
+	
+	      conn.commit();
+	      conn.setAutoCommit(oldAuto);
+	
+	      sendCancelNotices(notices, notifier);
+	      return canceled;
+	
+	  } catch (Exception e) {
+	      e.printStackTrace();
+	      try { if (pConn != null) pConn.getConnection().rollback(); } catch (Exception ignored) {}
+	      return 0;
+	  } finally {
+	      try { if (pConn != null) pConn.getConnection().setAutoCommit(true); } catch (Exception ignored) {}
+	      if (pConn != null) pool.releaseConnection(pConn);
+	  }
+	}
+	
+	/**
+	* Cancels future reservations on a table that no longer fits the new capacity (diners > newCapacity).
+	*/
+	public int cancelFutureReservationsDueToTableCapacityChange(int tableNumber, int newCapacity, NotificationService notifier, String reason) {
+	  PooledConnection pConn = null;
+	  int canceled = 0;
+	
+	  String selectSql =
+	      "SELECT reservation_id, confirmation_code, email, phone, start_time, dinners_number " +
+	      "FROM reservations " +
+	      "WHERE status='ACTIVE' AND start_time > NOW() AND table_number = ? AND dinners_number > ? " +
+	      "FOR UPDATE";
+	
+	  String updateSql =
+	      "UPDATE reservations SET status='CANCELED' " +
+	      "WHERE reservation_id=? AND status='ACTIVE'";
+	
+	  try {
+	      pConn = pool.getConnection();
+	      Connection conn = pConn.getConnection();
+	
+	      boolean oldAuto = conn.getAutoCommit();
+	      conn.setAutoCommit(false);
+	
+	      List<CancelNotice> notices = new ArrayList<>();
+	
+	      try (PreparedStatement psSel = conn.prepareStatement(selectSql)) {
+	          psSel.setInt(1, tableNumber);
+	          psSel.setInt(2, newCapacity);
+	
+	          try (ResultSet rs = psSel.executeQuery()) {
+	              while (rs.next()) {
+	                  int id = rs.getInt("reservation_id");
+	                  String code = rs.getString("confirmation_code");
+	                  String email = rs.getString("email");
+	                  String phone = rs.getString("phone");
+	                  Timestamp startTs = rs.getTimestamp("start_time");
+	                  LocalDateTime start = (startTs == null) ? null : startTs.toLocalDateTime();
+	
+	                  try (PreparedStatement psUpd = conn.prepareStatement(updateSql)) {
+	                      psUpd.setInt(1, id);
+	                      int rows = psUpd.executeUpdate();
+	                      if (rows > 0) {
+	                          canceled++;
+	                          notices.add(new CancelNotice(email, phone, code, start, reason));
+	                      }
+	                  }
+	              }
+	          }
+	      }
+	
+	      conn.commit();
+	      conn.setAutoCommit(oldAuto);
+	
+	      sendCancelNotices(notices, notifier);
+	      return canceled;
+	
+	  } catch (Exception e) {
+	      e.printStackTrace();
+	      try { if (pConn != null) pConn.getConnection().rollback(); } catch (Exception ignored) {}
+	      return 0;
+	  } finally {
+	      try { if (pConn != null) pConn.getConnection().setAutoCommit(true); } catch (Exception ignored) {}
+	      if (pConn != null) pool.releaseConnection(pConn);
+	  }
+	}
+	
+	//-------------------- internal helpers --------------------
+	
+	private int cancelOnDateOutsideCurrentHours(Connection conn, LocalDate date, NotificationService notifier, String reason) throws Exception {
+	  int canceled = 0;
+	
+	  HoursRange hours = getOpeningHoursOrDefault(conn, date);
+	
+	  String selectSql =
+	      "SELECT reservation_id, confirmation_code, email, phone, start_time, end_time " +
+	      "FROM reservations " +
+	      "WHERE status='ACTIVE' AND start_time > NOW() AND DATE(start_time) = ? " +
+	      "FOR UPDATE";
+	
+	  String updateSql =
+	      "UPDATE reservations SET status='CANCELED' " +
+	      "WHERE reservation_id=? AND status='ACTIVE'";
+	
+	  boolean oldAuto = conn.getAutoCommit();
+	  conn.setAutoCommit(false);
+	
+	  List<CancelNotice> notices = new ArrayList<>();
+	
+	  try (PreparedStatement psSel = conn.prepareStatement(selectSql)) {
+	      psSel.setDate(1, Date.valueOf(date));
+	
+	      try (ResultSet rs = psSel.executeQuery()) {
+	          while (rs.next()) {
+	              int id = rs.getInt("reservation_id");
+	              String code = rs.getString("confirmation_code");
+	              String email = rs.getString("email");
+	              String phone = rs.getString("phone");
+	
+	              Timestamp startTs = rs.getTimestamp("start_time");
+	              Timestamp endTs = rs.getTimestamp("end_time");
+	              LocalDateTime start = (startTs == null) ? null : startTs.toLocalDateTime();
+	              LocalDateTime end = (endTs == null) ? null : endTs.toLocalDateTime();
+	
+	              boolean shouldCancel;
+	
+	              if (hours.isClosed) {
+	                  shouldCancel = true;
+	              } else {
+	                  // reservation must be fully inside open-close
+	                  LocalTime st = start.toLocalTime();
+	                  LocalTime et = end.toLocalTime();
+	                  shouldCancel = st.isBefore(hours.open) || et.isAfter(hours.close);
+	              }
+	
+	              if (!shouldCancel) continue;
+	
+	              try (PreparedStatement psUpd = conn.prepareStatement(updateSql)) {
+	                  psUpd.setInt(1, id);
+	                  int rows = psUpd.executeUpdate();
+	                  if (rows > 0) {
+	                      canceled++;
+	                      notices.add(new CancelNotice(email, phone, code, start, reason));
+	                  }
+	              }
+	          }
+	      }
+	  }
+	
+	  conn.commit();
+	  conn.setAutoCommit(oldAuto);
+	
+	  sendCancelNotices(notices, notifier);
+	  return canceled;
+	}
+	
+	private void sendCancelNotices(List<CancelNotice> notices, NotificationService notifier) {
+	  for (CancelNotice n : notices) {
+	      String when = (n.start == null) ? "" : (n.start.toLocalDate() + " " + n.start.toLocalTime());
+	      String body =
+	          "Your Bistro reservation (" + n.code + ") was canceled.\n" +
+	          (when.isBlank() ? "" : ("Reservation time: " + when + "\n")) +
+	          "Reason: " + n.reason + "\n\n" +
+	          "If you want, you can create a new reservation based on the updated schedule.";
+	
+	      if (n.email != null && !n.email.isBlank()) {
+	          notifier.sendEmail(n.email, "Bistro – Reservation Canceled", body);
+	      }
+	      if (n.phone != null && !n.phone.isBlank()) {
+	          notifier.sendSms(n.phone, body);
+	      }
+	  }
+}
+
 
  	
 

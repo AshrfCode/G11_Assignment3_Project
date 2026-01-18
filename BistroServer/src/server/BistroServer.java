@@ -228,14 +228,22 @@ public class BistroServer extends AbstractServer {
                     }
 
                     case ClientRequest.CMD_UPDATE_OPENING_HOURS: {
-                        // params: day, openTime, closeTime
-                        String day = params[0].toString();        // "SUNDAY" וכו'
-                        String open = params[1].toString();       // "10:00"
-                        String close = params[2].toString();      // "22:00"
+                        String day = params[0].toString();
+                        String open = params[1].toString();
+                        String close = params[2].toString();
+
                         boolean ok = db.updateOpeningHours(day, open, close);
+
+                        if (ok) {
+                            String reason = "Opening hours were updated for " + day + " (" + open + " - " + close + ").";
+                            int canceled = db.cancelReservationsImpactedByWeeklyHoursChange(day, notifier, reason);
+                            if (canceled > 0) System.out.println("🧾 Canceled due to weekly hours change: " + canceled);
+                        }
+
                         client.sendToClient(ok ? "OPENING_UPDATED" : "OPENING_UPDATE_FAIL");
                         break;
                     }
+
 
                     case ClientRequest.CMD_GET_SPECIAL_OPENING: {
                         // params: date "YYYY-MM-DD"
@@ -251,16 +259,36 @@ public class BistroServer extends AbstractServer {
                         String close = (params[2] == null) ? null : params[2].toString();
                         boolean isClosed = Boolean.parseBoolean(params[3].toString());
                         boolean ok = db.upsertSpecialOpening(date, open, close, isClosed);
+                        if (ok) {
+                            String reason;
+                            if (isClosed) {
+                                reason = "The restaurant will be closed on " + date + " (special opening hours update).";
+                            } else {
+                                reason = "Special opening hours updated on " + date + " (" + open + " - " + close + ").";
+                            }
+                            int canceled = db.cancelReservationsImpactedByDateHoursChange(date, notifier, reason);
+                            if (canceled > 0) System.out.println("🧾 Canceled due to special hours change: " + canceled);
+                        }
+
                         client.sendToClient(ok ? "SPECIAL_OPENING_SAVED" : "SPECIAL_OPENING_SAVE_FAIL");
                         break;
                     }
 
                     case ClientRequest.CMD_DELETE_SPECIAL_OPENING: {
                         String date = params[0].toString();
+
                         boolean ok = db.deleteSpecialOpening(date);
+
+                        if (ok) {
+                            String reason = "Special opening hours were removed for " + date + ". Updated schedule applies.";
+                            int canceled = db.cancelReservationsImpactedByDateHoursChange(date, notifier, reason);
+                            if (canceled > 0) System.out.println("🧾 Canceled due to special hours deletion: " + canceled);
+                        }
+
                         client.sendToClient(ok ? "SPECIAL_OPENING_DELETED" : "SPECIAL_OPENING_DELETE_FAIL");
                         break;
                     }
+
                     case ClientRequest.CMD_PAY_RESERVATION: {
                         String code = params[0].toString();
                         String result = db.payReservation(code);
@@ -379,10 +407,19 @@ public class BistroServer extends AbstractServer {
                     case "DELETE_TABLE": {
                         int tableNumber = Integer.parseInt(params[0].toString());
                         tableDAO.deleteTable(tableNumber);
+
+                        int canceled = db.cancelFutureReservationsDueToTableRemoval(
+                            tableNumber,
+                            notifier,
+                            "Table " + tableNumber + " was removed from the restaurant."
+                        );
+                        if (canceled > 0) System.out.println("🧾 Canceled due to table removal: " + canceled);
+
                         client.sendToClient("✅ Table deleted");
                         client.sendToClient(tableDAO.getAllTables());
-                        
+                        break; // ✅ MUST HAVE
                     }
+
                     
                     case "ADD_SUBSCRIBER": {
 

@@ -35,7 +35,6 @@ public class TableDAO {
                     t.setCapacity(rs.getInt("capacity"));
                     t.setLocation(rs.getString("location"));
                     t.setStatus(rs.getString("status"));
-
                     tables.add(t);
                 }
             }
@@ -44,6 +43,29 @@ public class TableDAO {
         }
 
         return tables;
+    }
+
+    /* =========================
+       GET TABLE CAPACITY (NEW)
+       ========================= */
+    public Integer getTableCapacity(int tableNumber) throws SQLException {
+        PooledConnection pConn = null;
+
+        try {
+            pConn = pool.getConnection();
+            Connection conn = pConn.getConnection();
+
+            String sql = "SELECT capacity FROM restaurant_tables WHERE table_number = ? LIMIT 1";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, tableNumber);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) return rs.getInt("capacity");
+                    return null;
+                }
+            }
+        } finally {
+            pool.releaseConnection(pConn);
+        }
     }
 
     /* =========================
@@ -57,17 +79,15 @@ public class TableDAO {
             pConn = pool.getConnection();
             Connection conn = pConn.getConnection();
 
-            String sql = """
-                INSERT INTO restaurant_tables
-                (table_number, capacity, location, status)
-                VALUES (?, ?, ?, ?)
-            """;
+            String sql =
+                "INSERT INTO restaurant_tables (table_number, capacity, location, status) " +
+                "VALUES (?, ?, ?, ?)";
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, table.getTableNumber());
                 stmt.setInt(2, table.getCapacity());
                 stmt.setString(3, table.getLocation());
-                stmt.setString(4, "EMPTY"); // תואם DB
+                stmt.setString(4, "EMPTY");
                 stmt.executeUpdate();
             }
         } finally {
@@ -76,7 +96,7 @@ public class TableDAO {
     }
 
     /* =========================
-       UPDATE TABLE (capacity + location בלבד)
+       UPDATE TABLE (capacity + location only)
        ========================= */
     public void updateTable(Table table) throws SQLException {
 
@@ -86,11 +106,10 @@ public class TableDAO {
             pConn = pool.getConnection();
             Connection conn = pConn.getConnection();
 
-            String sql = """
-                UPDATE restaurant_tables
-                SET capacity = ?, location = ?
-                WHERE table_number = ?
-            """;
+            String sql =
+                "UPDATE restaurant_tables " +
+                "SET capacity = ?, location = ? " +
+                "WHERE table_number = ?";
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, table.getCapacity());
