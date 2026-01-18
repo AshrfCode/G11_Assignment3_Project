@@ -8,8 +8,18 @@ import java.sql.*;
 
 public class BillDAO {
 
+    /**
+     * Shared MySQL connection pool used to obtain and release database connections.
+     */
     private final MySQLConnectionPool pool = MySQLConnectionPool.getInstance();
 
+    /**
+     * Inserts a bill record into the {@code bills} table and associates it with a reservation.
+     *
+     * @param bill the bill entity containing bill number, amounts, and date to persist
+     * @param reservationId the reservation ID to associate with the inserted bill
+     * @throws SQLException if acquiring a connection or executing the INSERT statement fails
+     */
     public void insertBill(Bill bill, int reservationId) throws SQLException {
 
         PooledConnection pConn = null;

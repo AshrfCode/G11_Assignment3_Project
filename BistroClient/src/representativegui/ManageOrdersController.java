@@ -12,21 +12,51 @@ import javafx.scene.control.TableView;
 
 import java.util.List;
 
+/**
+ * JavaFX controller for viewing and managing today's orders/reservations.
+ * <p>
+ * Requests data from the server and displays it in a {@link TableView} of {@link ManageOrderEntry}
+ * instances. Uses {@link ClientSession#activeHandler} to process the asynchronous server response.
+ */
 public class ManageOrdersController {
 
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
 
+    /**
+     * Table view displaying order/reservation entries for management.
+     */
     @FXML private TableView<ManageOrderEntry> ordersTable;
+
+    /**
+     * Label used to display loading state, results, and error messages.
+     */
     @FXML private Label statusLabel;
 
+    /**
+     * Sets the client controller used for server communication.
+     *
+     * @param client the connected {@link ClientController}
+     */
     public void setClient(ClientController client) {
         this.client = client;
     }
 
+    /**
+     * Starts this screen by loading the initial dataset.
+     */
     public void start() {
         refreshData();
     }
 
+    /**
+     * Requests the latest management data from the server and refreshes the table.
+     * <p>
+     * Installs an active handler that expects a {@link List} of {@link ManageOrderEntry}
+     * objects (or an empty list) and updates the UI accordingly.
+     */
     @FXML
     private void refreshData() {
         if (client == null) {

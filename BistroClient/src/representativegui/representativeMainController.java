@@ -24,10 +24,27 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 
+/**
+ * JavaFX main controller for the representative/manager dashboard.
+ * <p>
+ * Loads different management screens (subscribers, tables, waiting list, visual reports,
+ * opening hours, and today's reservations) into the {@link #contentArea}.
+ * <p>
+ * Relies on {@link ClientSession#activeHandler} for asynchronous server responses and
+ * uses {@link ClientController} to send requests to the server.
+ */
 public class representativeMainController {
 	
+	/**
+     * Connected client controller used to communicate with the server.
+     */
 	private ClientController client;
 
+    /**
+     * Sets the connected client and loads the default screen once a connection is available.
+     *
+     * @param client the connected {@link ClientController}
+     */
     public void setClient(ClientController client) {
         this.client = client;
         
@@ -37,29 +54,68 @@ public class representativeMainController {
     }
 
 
+    /**
+     * Entry mode for the representative UI.
+     */
     public enum EntryMode {
         HOME,
         RESTAURANT
     }
 
+    /**
+     * Current logged-in role for this controller; used to toggle UI features.
+     */
     private UserRole role = UserRole.REPRESENTATIVE;
 
+    /**
+     * Label showing the currently selected section title.
+     */
     @FXML private Label sectionTitle;
+
+    /**
+     * Label showing role and mode information.
+     */
     @FXML private Label modeBadge;
+
+    /**
+     * Label used to greet the current user.
+     */
     @FXML private Label heyUserLabel;
 
+    /**
+     * Main content area where views are loaded dynamically.
+     */
     @FXML private StackPane contentArea;
 
+    /**
+     * Button that navigates to the waiting list view (visible in restaurant mode).
+     */
     @FXML private Button waitingListBtn;
+
+    /**
+     * Button that navigates to reports (visible for managers).
+     */
     @FXML private Button reportsBtn;
 
+    /**
+     * Current entry mode.
+     */
     private EntryMode entryMode = EntryMode.HOME;
+
+    /**
+     * Display name used in the greeting label.
+     */
     private String username = "Subscriber";
 
     // =========================
     // INITIALIZE
     // =========================
 
+    /**
+     * JavaFX initialization hook.
+     * <p>
+     * Applies UI visibility rules for role/mode and initializes the greeting label.
+     */
     @FXML
     public void initialize() {
         applyModeUI();
@@ -72,12 +128,18 @@ public class representativeMainController {
     // NAVIGATION – LOAD INTO contentArea
     // =========================
 
+    /**
+     * Loads the manage subscribers view into the content area.
+     */
     @FXML
     private void showManageSubscribers() {
         loadContent("/representativegui/ManageSubscribers.fxml",
                 "Manage Subscribers");
     }
 
+    /**
+     * Loads the manage tables view into the content area.
+     */
     @FXML
     private void showManageTables() {
         loadContent("/representativegui/ManageTables.fxml",
@@ -85,6 +147,9 @@ public class representativeMainController {
     }
   
     // ---------------- NAV ACTIONS ----------------
+    /**
+     * Loads the orders management view into the content area and triggers an initial data refresh.
+     */
     @FXML
 	private void showReservations() {
 	    setSection("Manage Orders");
@@ -117,6 +182,13 @@ public class representativeMainController {
 	}	
 
     
+    /**
+     * Builds a UI pane for managing special opening hours for a specific date.
+     * <p>
+     * Provides actions to load, save (upsert), and delete special opening hours for a chosen date.
+     *
+     * @return a {@link VBox} containing the special opening hours controls
+     */
     private VBox buildSpecialOpeningPane() {
 
     	
@@ -249,6 +321,16 @@ public class representativeMainController {
         return box;
     }
     
+    /**
+     * Displays the opening hours management screen.
+     * <p>
+     * Shows two sections:
+     * <ul>
+     *   <li>Special opening hours for a specific date</li>
+     *   <li>Weekly opening hours per day</li>
+     * </ul>
+     * Sends server requests to load and update opening hours and displays responses in the UI.
+     */
     @FXML
     private void showOpeningHoursManagement() {
         setSection("Opening Hours");
@@ -377,6 +459,12 @@ public class representativeMainController {
     }
 
 
+    /**
+     * Loads and displays the waiting list management view.
+     * <p>
+     * Injects the current {@link ClientController} into the waiting list controller and triggers
+     * an initial data load.
+     */
     @FXML
     private void showWaitingList() {
         setSection("Waiting List");
@@ -409,18 +497,30 @@ public class representativeMainController {
     }
 
 
+    /**
+     * Displays a placeholder for an orders section.
+     */
     @FXML
     private void showOrders() {
         setSection("Orders");
         setPlaceholder("View and manage restaurant orders.");
     }
 
+    /**
+     * Displays a placeholder for a reports section.
+     */
     @FXML
     private void showReports() {
         setSection("Reports");
         setPlaceholder("View restaurant activity reports.");
     }
 
+    /**
+     * Loads and displays the visual reports menu.
+     * <p>
+     * Injects the current {@link ClientController} and {@link #contentArea} into the menu controller
+     * so that charts can be loaded into the main view.
+     */
     @FXML
     private void showVisualReports() {
         setSection("Visual Reports");
@@ -452,12 +552,21 @@ public class representativeMainController {
         }
     }
 
+    /**
+     * Displays a placeholder for creating a subscriber.
+     */
     @FXML
     private void showCreateSubscriber() {
         setSection("Create Subscriber");
         setPlaceholder("Register a new subscriber.");
     }
 
+    /**
+     * Loads and displays today's reservations view.
+     * <p>
+     * Installs a refresh action that requests today's reservations from the server and passes
+     * the received list to the {@code TodaysReservationsController} for parsing and display.
+     */
     @FXML
     private void showReservationsToday() {
         setSection("Today's Reservations");
@@ -512,6 +621,11 @@ public class representativeMainController {
     // LOGOUT
     // =========================
 
+    /**
+     * Logs out the current user and navigates back to the sign-in screen.
+     * <p>
+     * Clears {@link ClientSession} state and loads {@code BistroMain.fxml}.
+     */
     @FXML
     private void handleLogout() {
         try {
@@ -539,6 +653,12 @@ public class representativeMainController {
     // HELPERS
     // =========================
 
+    /**
+     * Loads an FXML view into the content area and updates the current section title.
+     *
+     * @param fxmlPath path to the FXML resource
+     * @param title    section title to display
+     */
     private void loadContent(String fxmlPath, String title) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
@@ -553,12 +673,22 @@ public class representativeMainController {
         }
     }
 
+    /**
+     * Updates the section title label.
+     *
+     * @param title section title text
+     */
     private void setSection(String title) {
         if (sectionTitle != null) {
             sectionTitle.setText(title);
         }
     }
     
+    /**
+     * Sets the entry mode (HOME/RESTAURANT) and applies related UI rules.
+     *
+     * @param mode the entry mode to apply
+     */
     public void setEntryMode(EntryMode mode) {
         if (mode != null) {
             this.entryMode = mode;
@@ -567,6 +697,11 @@ public class representativeMainController {
     }
 
 
+    /**
+     * Shows a simple placeholder label in the content area.
+     *
+     * @param text placeholder text to display
+     */
     private void setPlaceholder(String text) {
         contentArea.getChildren().clear();
         Label lbl = new Label(text);
@@ -574,6 +709,11 @@ public class representativeMainController {
         contentArea.getChildren().add(lbl);
     }
 
+    /**
+     * Sets the displayed username for the greeting label.
+     *
+     * @param username the username to display
+     */
     public void setUsername(String username) {
         if (username != null && !username.trim().isEmpty()) {
             this.username = username.trim();
@@ -581,6 +721,11 @@ public class representativeMainController {
         heyUserLabel.setText("Hey " + this.username);
     }
 
+    /**
+     * Sets the current role and applies role-based and mode-based UI visibility rules.
+     *
+     * @param role the current {@link UserRole}
+     */
     public void setRole(UserRole role) {
         if (role != null) {
             this.role = role;
@@ -589,6 +734,11 @@ public class representativeMainController {
         applyModeUI();
     }
 
+    /**
+     * Applies UI changes based on the current {@link #entryMode} and {@link #role}.
+     * <p>
+     * Updates the mode badge text and controls visibility of restaurant-only actions.
+     */
     private void applyModeUI() {
         boolean isRestaurant = (entryMode == EntryMode.RESTAURANT);
 
@@ -605,6 +755,11 @@ public class representativeMainController {
         }
     }
 
+    /**
+     * Applies UI changes based on the current {@link #role}.
+     * <p>
+     * Shows reports-related actions only for managers.
+     */
     private void applyRoleUI() {
         boolean isManager = (role == UserRole.MANAGER);
 

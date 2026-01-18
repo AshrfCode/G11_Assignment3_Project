@@ -15,23 +15,70 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.stage.Stage;
 
+/**
+ * Main JavaFX controller for the Bistro client landing screen.
+ * <p>
+ * Handles login flows (email/password and member-code quick access), guest access routing,
+ * and navigation to role-specific views based on server responses.
+ * Implements {@link ChatIF} to receive and display asynchronous server messages.
+ */
 public class BistroMainController implements ChatIF {
 
+    /**
+     * Status label used to display login feedback and errors.
+     */
     @FXML private Label statusLabel;
+
+    /**
+     * Input field for the user's email/username.
+     */
     @FXML private TextField txtUsername;
+
+    /**
+     * Input field for the user's password.
+     */
     @FXML private PasswordField txtPassword;
+
+    /**
+     * Toggle indicating HOME entry mode (as opposed to RESTAURANT mode).
+     */
     @FXML private ToggleButton toggleHome;
+
+    /**
+     * Toggle indicating RESTAURANT entry mode (as opposed to HOME mode).
+     */
     @FXML private ToggleButton toggleRestaurant;
+
+    /**
+     * Input field for quick access member code (e.g., card/scan code).
+     */
     @FXML private TextField txtMemberCode;
 
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
 
+    /**
+     * JavaFX initialization hook.
+     * <p>
+     * Retrieves the singleton {@link ClientController} and binds it to this UI instance
+     * so that incoming server messages are routed to {@link #display(String)}.
+     */
     @FXML
     public void initialize() {
         // Always get the singleton client and bind it to THIS UI
         this.client = ClientManager.getClient(this);
     }
 
+    /**
+     * Displays a message originating from the server.
+     * <p>
+     * Handles login success/failure protocol messages and triggers navigation
+     * to the appropriate role-specific screens.
+     *
+     * @param message the message to display/process
+     */
     @Override
     public void display(String message) {
 
@@ -76,6 +123,11 @@ public class BistroMainController implements ChatIF {
         });
     }
 
+    /**
+     * Handles the email/password login action.
+     * <p>
+     * Validates required input fields and sends a login request to the server.
+     */
     @FXML
     private void handleLogin() {
 
@@ -98,6 +150,11 @@ public class BistroMainController implements ChatIF {
         }
     }
 
+    /**
+     * Handles quick access login using a member code (e.g., card scan).
+     * <p>
+     * Forces RESTAURANT mode, then sends a card-based login request to the server.
+     */
     @FXML
     private void handleQuickAccess() {
         String code = txtMemberCode.getText().trim();
@@ -122,6 +179,12 @@ public class BistroMainController implements ChatIF {
         }
     }
 
+    /**
+     * Handles guest access navigation.
+     * <p>
+     * Loads the guest UI, configures entry mode based on toggles, passes the connected client,
+     * and switches the current stage scene to the guest view.
+     */
     @FXML
     private void handleGuestAccess() {
         try {
@@ -163,6 +226,12 @@ public class BistroMainController implements ChatIF {
     // --------------------------------------------------------
     // DISCONNECT
     // --------------------------------------------------------
+    /**
+     * Handles application exit.
+     * <p>
+     * If connected, requests a disconnect from the server and closes the connection,
+     * then terminates the JVM.
+     */
     @FXML
     public void handleExit() {
         if (client != null && client.isConnected()) {
@@ -174,6 +243,11 @@ public class BistroMainController implements ChatIF {
 
     // --- kept as-is (stub) ---
 
+    /**
+     * Opens a subscriber view using stub/demo data while using the real client connection.
+     * <p>
+     * Intended for development/testing flows where a full login is not required.
+     */
     @FXML
     private void handleSubscriberStub() {
         try {
@@ -203,6 +277,17 @@ public class BistroMainController implements ChatIF {
         }
     }
 
+    /**
+     * Opens the subscriber main view after a successful login.
+     * <p>
+     * Determines entry mode from UI toggles and passes the connected client and subscriber
+     * identity/contact details to the subscriber controller.
+     *
+     * @param username the logged-in subscriber name
+     * @param userId   the logged-in subscriber/user ID
+     * @param email    the logged-in subscriber email
+     * @param phone    the logged-in subscriber phone
+     */
     // Changed: accept id/email/phone and pass to SubscriberMainController.
     private void openSubscriberView(String username, int userId, String email, String phone) {
         try {
@@ -235,6 +320,14 @@ public class BistroMainController implements ChatIF {
     }
 
 
+    /**
+     * Opens the representative main view after a successful login.
+     * <p>
+     * Determines entry mode from UI toggles, passes username and client connection,
+     * and switches the current stage scene to the representative view.
+     *
+     * @param username the logged-in representative name
+     */
     private void openRepresentativeView(String username) {
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -272,6 +365,15 @@ public class BistroMainController implements ChatIF {
         }
     }
     
+    /**
+     * Opens the manager view after a successful login.
+     * <p>
+     * Reuses the representative UI, sets entry mode from toggles, assigns username and role,
+     * passes the client connection, and switches the scene on the current stage.
+     *
+     * @param username the logged-in manager name
+     * @param role     the role string used to derive {@link common.UserRole}
+     */
     private void openManagerView(String username, String role) {
         try {
             FXMLLoader loader = new FXMLLoader(

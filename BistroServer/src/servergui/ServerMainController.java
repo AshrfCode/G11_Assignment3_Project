@@ -15,19 +15,61 @@ import server.NotificationService;
 import server.GmailSmtpNotificationService;
 
 
+/**
+ * JavaFX controller for the server main screen.
+ * <p>
+ * Responsible for initializing UI defaults, starting/stopping the {@link BistroServer},
+ * configuring the database connection pool, and maintaining a live table of connected clients.
+ * </p>
+ */
 public class ServerMainController {
 
+    /**
+     * Text fields for server and database configuration input.
+     */
     @FXML private TextField serverIpField, serverPortField, dbIpField, dbPortField, dbUserField;
+
+    /**
+     * Password field for database password input.
+     */
     @FXML private PasswordField dbPassField;
+
+    /**
+     * Label used to display current server status and error messages.
+     */
     @FXML private Label statusLabel;
+
+    /**
+     * Buttons used to connect/disconnect the server.
+     */
     @FXML private Button connectButton, disconnectButton;
+
+    /**
+     * Table view listing connected clients.
+     */
     @FXML private TableView<ClientInfo> clientTable;
+
+    /**
+     * Table columns for client IP, host, and connection status.
+     */
     @FXML private TableColumn<ClientInfo, String> ipColumn, hostColumn, statusColumn;
 
+    /**
+     * The underlying server instance managed by this controller.
+     */
     private BistroServer server;
 
+    /**
+     * Observable list backing the client table view.
+     */
     private ObservableList<ClientInfo> clients = FXCollections.observableArrayList();
 
+    /**
+     * Initializes the controller after the FXML fields are injected.
+     * <p>
+     * Sets default values for server/DB fields and configures the client table columns.
+     * </p>
+     */
     @FXML
     public void initialize() {
         try {
@@ -53,6 +95,14 @@ public class ServerMainController {
     // ---------------------------------------------------------------
     // HANDLE CONNECT (updated for connection pool)
     // ---------------------------------------------------------------
+
+    /**
+     * Starts the server using the configuration provided in the UI and initializes the database connection pool.
+     * <p>
+     * Prevents double-start if the server is already listening. On success, configures the JDBC URL,
+     * initializes the pool, performs a test connection acquisition, and starts the {@link BistroServer}.
+     * </p>
+     */
     @FXML
     void handleConnect() {
         // Prevent double-start
@@ -113,6 +163,13 @@ public class ServerMainController {
     // ---------------------------------------------------------------
     // HANDLE DISCONNECT
     // ---------------------------------------------------------------
+
+    /**
+     * Stops the server, closes all client connections, and shuts down the database connection pool.
+     * <p>
+     * Clears the client list and refreshes the UI table after shutdown.
+     * </p>
+     */
     @FXML
     void handleDisconnect() {
         if (server == null) {
@@ -147,6 +204,10 @@ public class ServerMainController {
     // ---------------------------------------------------------------
     // HANDLE EXIT
     // ---------------------------------------------------------------
+
+    /**
+     * Exits the application, attempting to close the server first if it is running.
+     */
     @FXML
     void handleExit() {
         try {
@@ -165,10 +226,30 @@ public class ServerMainController {
     // ---------------------------------------------------------------
     // CLIENT TABLE UPDATES (used by BistroServer)
     // ---------------------------------------------------------------
+
+    /**
+     * Adds a connected client entry to the GUI client table.
+     * <p>
+     * This method schedules the UI update on the JavaFX application thread.
+     * </p>
+     *
+     * @param ip the client's IP address
+     * @param host the client's host name
+     * @param id the client's internal identifier
+     */
     public void addClient(String ip, String host, int id) {
         Platform.runLater(() -> clients.add(new ClientInfo(ip, host, "Connected", id)));
     }
 
+    /**
+     * Updates the status of an existing client entry in the GUI client table.
+     * <p>
+     * This method schedules the UI update on the JavaFX application thread and refreshes the table.
+     * </p>
+     *
+     * @param id the client's internal identifier
+     * @param status the new status string to set
+     */
     public void updateClientStatus(int id, String status) {
         Platform.runLater(() -> {
             for (ClientInfo client : clients) {

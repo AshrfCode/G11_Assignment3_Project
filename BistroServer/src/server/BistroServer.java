@@ -22,21 +22,69 @@ import server.dao.ReservationDAO;
 import server.dao.TableDAO;
 import servergui.ServerMainController;
 
+/**
+ * Main OCSF server implementation for the Bistro system.
+ * <p>
+ * Responsibilities:
+ * <ul>
+ *   <li>Accept client connections and track basic session info (role/name/id).</li>
+ *   <li>Handle login (email/password) and card-reader login.</li>
+ *   <li>Handle {@link ClientRequest} commands and forward them to DB/DAO layers.</li>
+ *   <li>Run periodic background tasks (reminders, invites, no-show cancels, auto billing).</li>
+ * </ul>
+ */
 public class BistroServer extends AbstractServer {
 
+    /**
+     * Per-connection session info stored on the server side.
+     * <p>
+     * Stored as a {@code String[]} where:
+     * <ul>
+     *   <li>[0] = role</li>
+     *   <li>[1] = name</li>
+     *   <li>[2] = user id</li>
+     * </ul>
+     */
     private Map<ConnectionToClient, String[]> clientInfoMap = new ConcurrentHashMap<>();
+
+    /**
+     * Main DB controller for business-level operations.
+     */
     private DBController db = new DBController();
+
+    /**
+     * DAO for table management CRUD.
+     */
     private TableDAO tableDAO = new TableDAO();
+
+    /**
+     * DAO for reservation-specific operations such as check-in.
+     */
     private ReservationDAO reservationDAO = new ReservationDAO();
 
+    /**
+     * Reference to the server GUI controller (if running with GUI), for client status updates.
+     */
     private ServerMainController guiController;
     
  // simple anti-spam cooldown: key=email|phone -> lastSentMillis
+    /**
+     * Anti-spam cooldown storage for "forgot confirmation code" feature.
+     * Key format: {@code email|phone} (email lowercased).
+     * Value: last sent timestamp (millis).
+     */
     private final Map<String, Long> forgotCooldown = new ConcurrentHashMap<>();
     
+    /**
+     * Single-thread scheduler for periodic background jobs.
+     */
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     // For now: prints "sent" to server console (you can swap later to real Email/SMS)
+    /**
+     * Notification service used to send emails/SMS (reservation reminders, waiting list invites, etc.).
+     * Credentials are loaded from environment variables.
+     */
     private final NotificationService notifier =
     	    new GmailSmtpNotificationService(
     	        System.getenv("BISTRO_GMAIL_FROM"),
@@ -45,10 +93,21 @@ public class BistroServer extends AbstractServer {
 
 
     
+    /**
+     * Creates a new Bistro server instance and starts the periodic scheduler.
+     *
+     * @param port          server port
+     * @param guiController GUI controller (can be null in headless mode)
+     */
     public BistroServer(int port, ServerMainController guiController) {
         super(port);
         this.guiController = guiController;
  
+        // Periodic background tasks:
+        // - Reservation reminders
+        // - Waiting list invites
+        // - Auto-cancel no-shows
+        // - Auto-complete + billing for finished reservations
         scheduler.scheduleAtFixedRate(() -> {
             try {
                 int reminders = db.sendReservationReminders(notifier);
@@ -72,6 +131,19 @@ public class BistroServer extends AbstractServer {
       
     }
 
+    /**
+     * Main message dispatcher from clients.
+     * <p>
+     * Handles:
+     * <ul>
+     *   <li>{@link LoginRequest} for email/password authentication</li>
+     *   <li>{@code CardLoginRequest} for card reader authentication</li>
+     *   <li>{@link ClientRequest} commands (business actions)</li>
+     * </ul>
+     *
+     * @param msg    message object sent by the client
+     * @param client client connection
+     */
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
         System.out.println("=== SERVER RECEIVED MESSAGE === " + msg);
@@ -237,6 +309,7 @@ public class BistroServer extends AbstractServer {
 
                         boolean ok = db.updateOpeningHours(day, open, close);
 
+                        // If opening hours change can affect future reservations -> cancel impacted ones + notify.
                         if (ok) {
                             String reason = "Opening hours were updated for " + day + " (" + open + " - " + close + ").";
                             int canceled = db.cancelReservationsImpactedByWeeklyHoursChange(day, notifier, reason);
@@ -262,6 +335,8 @@ public class BistroServer extends AbstractServer {
                         String close = (params[2] == null) ? null : params[2].toString();
                         boolean isClosed = Boolean.parseBoolean(params[3].toString());
                         boolean ok = db.upsertSpecialOpening(date, open, close, isClosed);
+
+                        // If special hours update changes availability -> cancel impacted reservations + notify.
                         if (ok) {
                             String reason;
                             if (isClosed) {
@@ -282,6 +357,7 @@ public class BistroServer extends AbstractServer {
 
                         boolean ok = db.deleteSpecialOpening(date);
 
+                        // If deleting special hours changes schedule -> cancel impacted reservations + notify.
                         if (ok) {
                             String reason = "Special opening hours were removed for " + date + ". Updated schedule applies.";
                             int canceled = db.cancelReservationsImpactedByDateHoursChange(date, notifier, reason);
@@ -309,6 +385,7 @@ public class BistroServer extends AbstractServer {
                     case ClientRequest.CMD_GET_SUBSCRIBER_HISTORY: {
                         int subscriberId = (int) request.getParams()[0];
 
+                        // Pull history + visits count, wrap in a DTO response object.
                         List<ReservationHistoryRow> reservations =
                                 db.getSubscriberReservationHistory(subscriberId);
 
@@ -327,6 +404,7 @@ public class BistroServer extends AbstractServer {
                         String phone = (params.length >= 2 && params[1] != null) ? params[1].toString().trim() : "";
                         String email = (params.length >= 3 && params[2] != null) ? params[2].toString().trim() : "";
 
+                        // Try immediate seating first (walk-in direct table assignment).
                         Integer tableNow = db.tryAssignWalkInToEmptyTable(diners);
 
                         if (tableNow != null && tableNow > 0) {
@@ -350,6 +428,7 @@ public class BistroServer extends AbstractServer {
                         String phone = (params.length >= 3 && params[2] != null) ? params[2].toString().trim() : "";
                         String email = (params.length >= 4 && params[3] != null) ? params[3].toString().trim() : "";
 
+                        // Try immediate seating first (walk-in direct table assignment).
                         Integer tableNow = db.tryAssignWalkInToEmptyTable(diners);
 
                         if (tableNow != null && tableNow > 0) {
@@ -428,6 +507,7 @@ public class BistroServer extends AbstractServer {
                         int tableNumber = Integer.parseInt(params[0].toString());
                         tableDAO.deleteTable(tableNumber);
 
+                        // Removing a table can invalidate future reservations -> cancel + notify.
                         int canceled = db.cancelFutureReservationsDueToTableRemoval(
                             tableNumber,
                             notifier,
@@ -443,6 +523,7 @@ public class BistroServer extends AbstractServer {
                     
                     case "ADD_SUBSCRIBER": {
 
+                        // Authorization: representative or manager only.
                         if (!isRepresentative(client)) {
                             client.sendToClient("❌ Unauthorized");
                             break;
@@ -564,7 +645,7 @@ public class BistroServer extends AbstractServer {
                     }
                     
                     case ClientRequest.CMD_GET_ALL_RESERVATIONS: {
-                        // Call the new method we just wrote
+                        // Returns list used by representative "Manage Orders" table view.
                         client.sendToClient(db.getAllReservations());
                         break;
                     }
@@ -580,6 +661,7 @@ public class BistroServer extends AbstractServer {
                     }
                     
                     case "DISCONNECT":
+                        // Client requested disconnect; closes the socket connection.
                         client.close();
                         break;
                         
@@ -594,6 +676,7 @@ public class BistroServer extends AbstractServer {
                     	System.out.println("FORGOT: email=" + email + " phone=" + phone);
 
 
+                        // Always respond with a generic message to avoid leaking whether a match exists.
                         String genericReply = "FORGOT_OK|If a reservation matches these details, the code was sent.";
 
                         // require BOTH (recommended)
@@ -602,6 +685,7 @@ public class BistroServer extends AbstractServer {
                             break;
                         }
 
+                        // Apply a simple per-identity cooldown to reduce abuse.
                         String key = email.toLowerCase() + "|" + phone;
                         long now = System.currentTimeMillis();
 
@@ -689,6 +773,7 @@ public class BistroServer extends AbstractServer {
 
 
                     default:
+                        // Unknown command fallback.
                         client.sendToClient("❌ Unknown command: " + command);
                 }
 
@@ -704,6 +789,12 @@ public class BistroServer extends AbstractServer {
     /* =========================
     AUTHORIZATION
     ========================= */
+	 /**
+	  * Checks whether the given client connection is authorized as a representative or manager.
+	  *
+	  * @param client connection to check
+	  * @return true if role is REPRESENTATIVE or MANAGER; otherwise false
+	  */
 	 private boolean isRepresentative(ConnectionToClient client) {
 	     String[] info = clientInfoMap.get(client);
 	     if (info == null) return false;
@@ -716,11 +807,18 @@ public class BistroServer extends AbstractServer {
     /* =========================
        CLIENT CONNECT / DISCONNECT
        ========================= */
+    /**
+     * Called by OCSF when a client connects.
+     * Stores default session info and updates GUI if available.
+     *
+     * @param client connected client
+     */
     @Override
     protected void clientConnected(ConnectionToClient client) {
         String ip = client.getInetAddress().getHostAddress();
         String host = client.getInetAddress().getHostName();
 
+        // Default session info until login occurs.
         clientInfoMap.putIfAbsent(client, new String[] { "UNKNOWN", "UNKNOWN" });
 
         if (guiController != null) {
@@ -730,6 +828,12 @@ public class BistroServer extends AbstractServer {
         System.out.println("✅ Client connected: " + ip + " / " + host);
     }
 
+    /**
+     * Called by OCSF when a client disconnects.
+     * Removes session info and updates GUI if available.
+     *
+     * @param client disconnected client
+     */
     @Override
     protected synchronized void clientDisconnected(ConnectionToClient client) {
         clientInfoMap.remove(client);
@@ -741,6 +845,10 @@ public class BistroServer extends AbstractServer {
         System.out.println("❌ Client disconnected");
     }
     
+    /**
+     * Called by OCSF when the server stops.
+     * Shuts down the scheduler to stop periodic background jobs.
+     */
     @Override
     protected void serverStopped() {
         System.out.println("🛑 Server stopped. Shutting down scheduler...");

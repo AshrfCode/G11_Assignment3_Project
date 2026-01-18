@@ -11,34 +11,89 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+/**
+ * Main JavaFX controller for the guest area.
+ * <p>
+ * Manages navigation between guest screens (reservation, cancellation, waiting list, payment, check-in),
+ * applies entry mode behavior (HOME vs RESTAURANT), and routes server responses by resetting
+ * {@link ClientSession#activeHandler} when switching sections.
+ */
 public class GuestMainController {
 
+    /**
+     * Entry mode for the guest UI, controlling which features are available.
+     */
     public enum EntryMode { HOME, RESTAURANT }
 
+    /**
+     * Current entry mode; defaults to {@link EntryMode#HOME}.
+     */
     private EntryMode entryMode = EntryMode.HOME; // ✅ safer default
+
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
 
+    /**
+     * Button for opening the waiting list screen (restaurant mode only).
+     */
     @FXML private Button waitingListBtn;
+
+    /**
+     * Button for opening the check-in screen (restaurant mode only).
+     */
     @FXML private Button checkInBtn;        // ✅ must exist in FXML with fx:id="checkInBtn"
+
+    /**
+     * Label showing the currently selected section title.
+     */
     @FXML private Label sectionTitle;
+
+    /**
+     * Label indicating the current entry mode (HOME/RESTAURANT).
+     */
     @FXML private Label modeBadge;
+
+    /**
+     * Container area where selected screens are loaded and displayed.
+     */
     @FXML private StackPane contentArea;
 
+    /**
+     * Sets the client controller and shows the default reservation screen.
+     *
+     * @param client the connected {@link ClientController}
+     */
     public void setClient(ClientController client) {
         this.client = client;
         showReservation();
     }
 
+    /**
+     * JavaFX initialization hook.
+     * <p>
+     * Applies the current {@link #entryMode} to configure UI visibility.
+     */
     @FXML
     public void initialize() {
         applyEntryMode();
     }
 
+    /**
+     * Sets the current entry mode and updates the UI accordingly.
+     *
+     * @param mode the desired {@link EntryMode}
+     */
     public void setEntryMode(EntryMode mode) {
         this.entryMode = mode;
         applyEntryMode();
     }
 
+    /**
+     * Applies the current {@link #entryMode} to the UI by showing/hiding controls
+     * and updating the mode badge text.
+     */
     private void applyEntryMode() {
         boolean isRestaurant = (entryMode == EntryMode.RESTAURANT);
 
@@ -58,6 +113,12 @@ public class GuestMainController {
         }
     }
 
+    /**
+     * Loads and displays the reservation creation screen.
+     * <p>
+     * Clears any previously registered {@link ClientSession#activeHandler} to avoid
+     * handling responses in the wrong screen.
+     */
     @FXML
     private void showReservation() {
         ClientSession.activeHandler = null; // ✅ avoid old handlers
@@ -78,6 +139,12 @@ public class GuestMainController {
         }
     }
 
+    /**
+     * Loads and displays the reservation cancellation screen.
+     * <p>
+     * Clears any previously registered {@link ClientSession#activeHandler} to avoid
+     * handling responses in the wrong screen.
+     */
     @FXML
     private void showCancelReservation() {
         ClientSession.activeHandler = null;
@@ -98,6 +165,12 @@ public class GuestMainController {
         }
     }
 
+    /**
+     * Loads and displays the waiting list screen for guests.
+     * <p>
+     * Clears any previously registered {@link ClientSession#activeHandler} to avoid
+     * handling responses in the wrong screen.
+     */
     @FXML
     private void showWaitingList() {
         ClientSession.activeHandler = null;
@@ -118,6 +191,12 @@ public class GuestMainController {
         }
     }
 
+    /**
+     * Loads and displays the payment screen.
+     * <p>
+     * Clears any previously registered {@link ClientSession#activeHandler} to avoid
+     * handling responses in the wrong screen.
+     */
     @FXML
     private void showPayment() {
         ClientSession.activeHandler = null;
@@ -139,6 +218,12 @@ public class GuestMainController {
     }
 
     
+    /**
+     * Loads and displays the check-in screen.
+     * <p>
+     * Clears any previously registered {@link ClientSession#activeHandler} to avoid
+     * handling responses in the wrong screen.
+     */
     @FXML
     private void showCheckIn() {
         ClientSession.activeHandler = null;
@@ -160,6 +245,11 @@ public class GuestMainController {
         }
     }
 
+    /**
+     * Navigates back to the sign-in screen.
+     * <p>
+     * Clears the client session state and replaces the current scene with the main sign-in UI.
+     */
     @FXML
     private void handleBack() {
         try {

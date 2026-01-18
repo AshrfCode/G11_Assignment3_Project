@@ -23,6 +23,15 @@ import common.ReservationHistoryRow;
 import common.WaitingListEntry;
 import server.dao.WaitingListDAO;
 
+/**
+ * Handles all database operations for the Bistro server.
+ * <p>
+ * This class acts as a centralized service layer for querying and updating the MySQL database,
+ * including reservations, waiting list, opening hours, billing, reports, and automated tasks
+ * (reminders, waiting list invites, no-show cancellations, and auto checkout).
+ * <p>
+ * Uses a {@link MySQLConnectionPool} for connection reuse and efficiency.
+ */
 public class DBController {
 	
 	// ================== Cancel result codes ==================
@@ -38,6 +47,12 @@ public class DBController {
     // ------------------------------------------------------------
     // GET ALL ORDERS
     // ------------------------------------------------------------
+
+    /**
+     * Retrieves all reservations as formatted strings ordered by newest first.
+     *
+     * @return list of formatted reservation rows (or an error message if DB fails)
+     */
     public List<String> getAllOrders() {
         List<String> result = new ArrayList<>();
 
@@ -84,6 +99,14 @@ public class DBController {
     // ------------------------------------------------------------
     // UPDATE ORDER DATE
     // ------------------------------------------------------------
+
+    /**
+     * Updates an order date in the {@code Order} table by order number.
+     *
+     * @param orderNumber the order identifier
+     * @param newDate     the new order date
+     * @return true if a row was updated, otherwise false
+     */
     public boolean updateOrderDate(int orderNumber, Date newDate) {
         String sql = "UPDATE `Order` SET order_date = ? WHERE order_number = ?";
 
@@ -108,6 +131,12 @@ public class DBController {
         }
     }
     
+    /**
+     * Returns today's active reservation confirmation codes for the subscriber user.
+     *
+     * @param userId the {@code users.id} of the subscriber
+     * @return list of active confirmation codes for today
+     */
     public ArrayList<String> getSubscriberActiveCodes(int userId) {
 	    ArrayList<String> codes = new ArrayList<>();
 	
@@ -146,6 +175,14 @@ public class DBController {
     // ------------------------------------------------------------
     // UPDATE NUMBER OF GUESTS
     // ------------------------------------------------------------
+
+    /**
+     * Updates the number of guests for an order in the {@code Order} table.
+     *
+     * @param orderNumber the order identifier
+     * @param guests      new guest count
+     * @return true if update succeeded, otherwise false
+     */
     public boolean updateNumberOfGuests(int orderNumber, int guests) {
         String sql = "UPDATE `Order` SET number_of_guests = ? WHERE order_number = ?";
 
@@ -174,6 +211,21 @@ public class DBController {
     // RESERVATIONS
     // ============================================================
 
+    /**
+     * Calculates available half-hour reservation start times for a given date and party size.
+     * <p>
+     * Rules enforced:
+     * <ul>
+     *   <li>Special opening hours override regular weekly hours.</li>
+     *   <li>Closed days return a list containing {@code "CLOSED"}.</li>
+     *   <li>Reservations are 2 hours long, so the last start time is close-2h.</li>
+     *   <li>Reservation must be at least 1 hour from now and at most 1 month ahead.</li>
+     * </ul>
+     *
+     * @param dateStr  date in {@code YYYY-MM-DD}
+     * @param dinners number of diners
+     * @return list of available slot strings (HH:mm) or {@code ["CLOSED"]}
+     */
     public List<String> getAvailableReservationSlots(String dateStr, int dinners) {
         List<String> slots = new ArrayList<>();
         PooledConnection pConn = null;
@@ -221,6 +273,11 @@ public class DBController {
         return slots;
     }
 
+    /**
+     * Retrieves today's active reservations (time, diners, table, code) formatted for display.
+     *
+     * @return list of formatted reservation strings (or an error message if DB fails)
+     */
     public List<String> getTodayReservations() {
     List<String> result = new ArrayList<>();
 
@@ -367,6 +424,12 @@ public class DBController {
  // SPECIAL OPENING HOURS
  // ------------------------------------------------------------
 
+    /**
+     * Fetches a special opening-hours record for a specific date.
+     *
+     * @param dateYYYYMMDD date in {@code YYYY-MM-DD}
+     * @return a human-readable summary string or an error message
+     */
  public String getSpecialOpeningByDate(String dateYYYYMMDD) {
      String sql = "SELECT special_date, open_time, close_time, is_closed " +
                   "FROM special_opening_hours WHERE special_date = ?";
@@ -404,6 +467,17 @@ public class DBController {
      }
  }
 
+    /**
+     * Inserts or updates special opening hours for a given date.
+     * <p>
+     * If {@code isClosed} is true, open/close times are stored as NULL.
+     *
+     * @param dateYYYYMMDD date in {@code YYYY-MM-DD}
+     * @param openTime     open time in {@code HH:mm} (or null/blank if closed)
+     * @param closeTime    close time in {@code HH:mm} (or null/blank if closed)
+     * @param isClosed     whether the restaurant is closed on that date
+     * @return true if insert/update affected rows, otherwise false
+     */
  public boolean upsertSpecialOpening(String dateYYYYMMDD, String openTime, String closeTime, boolean isClosed) {
      String sql =
          "INSERT INTO special_opening_hours (special_date, open_time, close_time, is_closed) " +
@@ -448,6 +522,12 @@ public class DBController {
      }
  }
 
+    /**
+     * Deletes the special opening record for a given date.
+     *
+     * @param dateYYYYMMDD date in {@code YYYY-MM-DD}
+     * @return true if a row was deleted, otherwise false
+     */
  public boolean deleteSpecialOpening(String dateYYYYMMDD) {
 	    String sql = "DELETE FROM special_opening_hours WHERE special_date = ?";
 
@@ -473,6 +553,12 @@ public class DBController {
  // Regular Opening Hours (Weekly)
  // ===========================
 
+    /**
+     * Retrieves the weekly opening hours from the {@code opening_hours} table.
+     * If no rows exist, returns a default schedule of 10:00-22:00 for all days.
+     *
+     * @return list of strings "DAY | open - close"
+     */
  public List<String> getOpeningHours() {
      List<String> result = new ArrayList<>();
 
@@ -523,6 +609,16 @@ public class DBController {
      return result;
  }
 
+    /**
+     * Updates opening hours for a specific day in {@code opening_hours}.
+     * <p>
+     * Automatically converts {@code HH:mm} into {@code HH:mm:ss}.
+     *
+     * @param day       day name in DB (e.g., "MONDAY")
+     * @param openTime  time string (HH:mm or HH:mm:ss)
+     * @param closeTime time string (HH:mm or HH:mm:ss)
+     * @return true if update affected a row, otherwise false
+     */
  public boolean updateOpeningHours(String day, String openTime, String closeTime) {
     // 1. HELPER: Auto-fix "HH:mm" to "HH:mm:ss"
     if (openTime != null && openTime.length() == 5) {
@@ -558,6 +654,12 @@ public class DBController {
 }
 
 
+    /**
+     * Converts a day name (e.g., "MONDAY") into an integer (1..7).
+     *
+     * @param dayName day name
+     * @return 1..7 mapping (default SUNDAY)
+     */
  private int dayNameToInt(String dayName) {
      // תומך גם באנגלית וגם אם מגיע "SUNDAY" וכו'
      String d = dayName.trim().toUpperCase();
@@ -573,6 +675,12 @@ public class DBController {
      };
  }
 
+    /**
+     * Converts an integer day (1..7) into a day name used in the DB.
+     *
+     * @param day day index
+     * @return day name (default SUNDAY)
+     */
  private String dayIntToName(int day) {
      return switch (day) {
          case 1 -> "MONDAY";
@@ -595,13 +703,26 @@ public class DBController {
 
     /**
      * Guest cancel (by code only)
+     *
+     * @param confirmationCode reservation confirmation code
+     * @return cancellation result code
      */
     public String cancelReservation(String confirmationCode) {
         return cancelReservation(confirmationCode, null, "", "", false);
     }
 
     /**
-     * Subscriber cancel (restricted to owner when restrictToOwner=true)
+     * Cancels a reservation by confirmation code.
+     * <p>
+     * If {@code restrictToOwner} is true, cancellation is allowed only if the requester matches the
+     * reservation owner by subscriber_number or by email/phone.
+     *
+     * @param confirmationCode        reservation confirmation code
+     * @param requesterSubscriberId   requesting user id (subscriber)
+     * @param requesterEmail          requester email (fallback)
+     * @param requesterPhone          requester phone (fallback)
+     * @param restrictToOwner         whether to enforce ownership checks
+     * @return cancellation result code constant
      */
     public String cancelReservation(String confirmationCode,
                                     Integer requesterSubscriberId,
@@ -727,6 +848,11 @@ public class DBController {
         }
     }
     
+    /**
+     * Retrieves the current waiting list as rich {@link WaitingListEntry} objects.
+     *
+     * @return list of waiting list entries ordered by request time
+     */
  // Change return type from List<String> to List<WaitingListEntry>
     public List<WaitingListEntry> getWaitingList() {
         List<WaitingListEntry> result = new ArrayList<>();
@@ -777,6 +903,11 @@ public class DBController {
         return result;
     }
     
+    /**
+     * Retrieves all reservations (past + future) for management screens.
+     *
+     * @return list of {@link ManageOrderEntry} ordered by newest start time first
+     */
  // Method to get ALL reservations (History + Future)
     public List<ManageOrderEntry> getAllReservations() {
         List<ManageOrderEntry> result = new ArrayList<>();
@@ -823,8 +954,13 @@ public class DBController {
     // -------------------- subscriber lookup helper --------------------
 
     /**
-     * If a guest entered phone/email that already belongs to a subscriber,
-     * return that subscriber's users.id (so reservation becomes subscriber reservation).
+     * Attempts to find an active subscriber user ID by matching email and/or phone.
+     * Email is checked first, then phone.
+     *
+     * @param conn  open DB connection
+     * @param email email string (may be blank)
+     * @param phone phone string (may be blank)
+     * @return {@code users.id} if found, otherwise null
      */
     private Integer findSubscriberIdByEmailOrPhone(Connection conn, String email, String phone) {
         try {
@@ -859,10 +995,28 @@ public class DBController {
 
     // -------------------- table-based helpers --------------------
 
+    /**
+     * Checks if there is at least one suitable table available for the given time window.
+     *
+     * @param conn  open DB connection
+     * @param start reservation start time
+     * @param dinners number of diners
+     * @return true if a table is available, otherwise false
+     * @throws SQLException if DB operations fail
+     */
     private boolean isSlotAvailable(Connection conn, LocalDateTime start, int dinners) throws SQLException {
         return findBestAvailableTable(conn, start, dinners) != null;
     }
 
+    /**
+     * Finds the smallest-capacity table that can fit the party and is free during the 2-hour window.
+     *
+     * @param conn    open DB connection
+     * @param start   reservation start time
+     * @param dinners number of diners
+     * @return table number if found, otherwise null
+     * @throws SQLException if DB operations fail
+     */
     private Integer findBestAvailableTable(Connection conn, LocalDateTime start, int dinners) throws SQLException {
         LocalDateTime end = start.plusHours(2);
 
@@ -893,6 +1047,18 @@ public class DBController {
 
     // -------------------- opening hours --------------------
 
+    /**
+     * Returns opening hours for a date using:
+     * <ol>
+     *   <li>Special date override</li>
+     *   <li>Weekly regular schedule</li>
+     *   <li>Hardcoded default</li>
+     * </ol>
+     *
+     * @param conn open DB connection
+     * @param date target date
+     * @return resolved {@link HoursRange}
+     */
     private HoursRange getOpeningHoursOrDefault(Connection conn, LocalDate date) {
         // Priority 1: Check SPECIAL dates (Holidays)
         //
@@ -908,6 +1074,13 @@ public class DBController {
         return new HoursRange(LocalTime.of(10, 0), LocalTime.of(22, 0));
     }
 
+    /**
+     * Reads special opening hours for an exact date.
+     *
+     * @param conn open DB connection
+     * @param date target date
+     * @return {@link HoursRange} or null if none exists
+     */
     // --- Sub-helper for Special Table ---
     private HoursRange tryReadSpecialHours(Connection conn, LocalDate date) {
         String sql = "SELECT open_time, close_time, is_closed FROM special_opening_hours WHERE special_date = ?";
@@ -929,6 +1102,13 @@ public class DBController {
         return null;
     }
 
+    /**
+     * Reads regular weekly opening hours for the date's day-of-week.
+     *
+     * @param conn open DB connection
+     * @param date target date
+     * @return {@link HoursRange} or null if none exists
+     */
     // --- Sub-helper for Regular Table ---
     private HoursRange tryReadRegularHours(Connection conn, LocalDate date) {
         String sql = "SELECT open_time, close_time FROM opening_hours WHERE day = ?";
@@ -948,6 +1128,14 @@ public class DBController {
         return null;
     }
 
+    /**
+     * Attempts to read opening hours from any of several possible legacy tables.
+     * (Currently unused by the main flow but kept as a fallback utility.)
+     *
+     * @param conn open DB connection
+     * @param date target date
+     * @return {@link HoursRange} or null if none found
+     */
     private HoursRange tryReadHours(Connection conn, LocalDate date) {
         int dowJava = date.getDayOfWeek().getValue(); // 1=Mon..7=Sun
         int dowZeroBased = dowJava % 7;              // 0=Sun..6=Sat
@@ -964,6 +1152,15 @@ public class DBController {
         return null;
     }
 
+    /**
+     * Reads opening hours for a given integer day value from a specified table.
+     *
+     * @param conn      open DB connection
+     * @param table     candidate table name
+     * @param dayColumn column name representing the day index
+     * @param dayValue  day index value
+     * @return {@link HoursRange} or null if not found/invalid
+     */
     private HoursRange tryReadHoursFromTable(Connection conn, String table, String dayColumn, int dayValue) {
         try {
             String sql = "SELECT `open_time`, `close_time` FROM `" + table + "` WHERE `" + dayColumn + "`=?";
@@ -985,6 +1182,11 @@ public class DBController {
 
     // -------------------- misc helpers --------------------
 
+    /**
+     * Generates a random 6-digit numeric confirmation code.
+     *
+     * @return confirmation code as string
+     */
     private String generateConfirmationCode() {
         SecureRandom rnd = new SecureRandom();
         int num = 100000 + rnd.nextInt(900000);
@@ -993,6 +1195,12 @@ public class DBController {
     
     
 
+    /**
+     * Safely parses an integer from a string.
+     *
+     * @param s input string
+     * @return parsed integer or null if invalid
+     */
     private Integer tryParseInt(String s) {
         try {
             return Integer.parseInt(s.trim());
@@ -1001,6 +1209,14 @@ public class DBController {
         }
     }
     
+    /**
+     * Retrieves the subscriber_number (e.g., "SUB123") for a given subscriber user id.
+     *
+     * @param conn   open DB connection
+     * @param userId {@code users.id}
+     * @return subscriber_number or null if not found
+     * @throws SQLException if DB operations fail
+     */
     private String getSubscriberNumberByUserId(Connection conn, int userId) throws SQLException {
         String sql = "SELECT subscriber_number FROM subscribers WHERE user_id = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -1013,6 +1229,10 @@ public class DBController {
     }
 
 
+    /**
+     * Represents a resolved opening-hours range.
+     * If {@code isClosed} is true, open/close may be null.
+     */
     private static class HoursRange {
         LocalTime open;
         LocalTime close;
@@ -1029,6 +1249,15 @@ public class DBController {
         }
     }
     
+    /**
+     * Performs payment for a CHECKED_IN reservation by confirmation code.
+     * <p>
+     * Enforces the payment window to be between start_time and end_time (2 hours).
+     * Creates a bill record and marks the reservation as COMPLETED.
+     *
+     * @param confirmationCode reservation confirmation code
+     * @return protocol string PAY_OK|... or PAY_FAIL|...
+     */
     public String payReservation(String confirmationCode) {
         PooledConnection pConn = null;
 
@@ -1161,10 +1390,22 @@ public class DBController {
         }
     }
 
+    /**
+     * Formats a monetary value to 2 decimal places using US locale.
+     *
+     * @param v numeric value
+     * @return formatted string with two decimals
+     */
     private String formatMoney(double v) {
         return String.format(java.util.Locale.US, "%.2f", v);
     }
     
+    /**
+     * Previews the bill calculation for a reservation (without inserting a bill or updating status).
+     *
+     * @param confirmationCode reservation confirmation code
+     * @return protocol string PREVIEW_OK|... or PREVIEW_FAIL|...
+     */
     public String previewBill(String confirmationCode) {
         PooledConnection pConn = null;
 
@@ -1240,6 +1481,12 @@ public class DBController {
         }
     }
     
+    /**
+     * Loads the full reservation history for a subscriber user (all statuses).
+     *
+     * @param subscriberUserId {@code users.id} for the subscriber
+     * @return list of {@link ReservationHistoryRow} ordered by newest first
+     */
     // Subscriber History Section
     public List<ReservationHistoryRow> getSubscriberReservationHistory(int subscriberUserId) {
         List<ReservationHistoryRow> out = new ArrayList<>();
@@ -1288,6 +1535,15 @@ public class DBController {
     
     
     
+    /**
+     * Adds a subscriber to the waiting list (if currently within working hours).
+     *
+     * @param userId subscriber user id
+     * @param diners party size
+     * @param phone  optional phone
+     * @param email  optional email
+     * @return waiting list confirmation code, "CLOSED", or null on error
+     */
     public String joinWaitingListAsSubscriber(int userId, int diners, String phone, String email) {
         PooledConnection pConn = null;
 
@@ -1314,6 +1570,11 @@ public class DBController {
     }
 
 
+    /**
+     * Generates a random waiting-list confirmation code in the format WLxxxxxx.
+     *
+     * @return waiting list code
+     */
     private String generateWLConfirmationCode() {
         SecureRandom random = new SecureRandom();
         int number = 100000 + random.nextInt(900000); // 6 ספרות
@@ -1321,6 +1582,12 @@ public class DBController {
     }
 
 
+    /**
+     * Removes a subscriber from the waiting list.
+     *
+     * @param userId subscriber user id
+     * @return true if removed, otherwise false
+     */
     public boolean leaveWaitingListAsSubscriber(int userId) {
         PooledConnection pConn = null;
 
@@ -1342,6 +1609,12 @@ public class DBController {
     }
 
     
+    /**
+     * Counts completed visits for a given subscriber user.
+     *
+     * @param subscriberUserId subscriber user id
+     * @return number of COMPLETED reservations
+     */
     // Subscriber Visit History 
     public int countSubscriberVisits(int subscriberUserId) {
         String sql =
@@ -1372,6 +1645,14 @@ public class DBController {
         
     }
     
+    /**
+     * Adds a guest to the waiting list (if currently within working hours).
+     *
+     * @param diners party size
+     * @param phone  guest phone
+     * @param email  guest email
+     * @return waiting list confirmation code, "CLOSED", or null on error
+     */
     public String joinWaitingListAsGuest(int diners, String phone, String email) {
         PooledConnection pConn = null;
 
@@ -1396,6 +1677,12 @@ public class DBController {
         }
     }
 
+    /**
+     * Removes a guest from the waiting list using their waiting confirmation code.
+     *
+     * @param confirmationCode waiting code (WLxxxxxx)
+     * @return true if removed, otherwise false
+     */
     public boolean leaveWaitingListAsGuest(String confirmationCode) {
         PooledConnection pConn = null;
 
@@ -1415,6 +1702,15 @@ public class DBController {
             if (pConn != null) pool.releaseConnection(pConn);
         }
     }
+
+    /**
+     * Finds the most relevant reservation confirmation code by email + phone.
+     * Prefers ACTIVE/CHECKED_IN reservations, newest first.
+     *
+     * @param email reservation email
+     * @param phone reservation phone
+     * @return confirmation code or null if not found
+     */
     public String findConfirmationCodeByEmailAndPhone(String email, String phone) {
 
         String safeEmail = (email == null) ? "" : email.trim();
@@ -1472,6 +1768,14 @@ public class DBController {
 
         return null;
     }
+
+    /**
+     * Finds a reservation confirmation code by email or phone and sends it via email (SMS is placeholder).
+     *
+     * @param email email input
+     * @param phone phone input
+     * @return result message string
+     */
     public String sendConfirmationCodeByEmailOrPhone(String email, String phone) {
         String safeEmail = (email == null) ? "" : email.trim();
         String safePhone = (phone == null) ? "" : phone.trim();
@@ -1534,6 +1838,14 @@ public class DBController {
         }
     }
     
+    /**
+     * Builds monthly statistics about dining duration and check-in delay for COMPLETED reservations.
+     * Also persists the report to the DB.
+     *
+     * @param month month number (1-12)
+     * @param year  year number
+     * @return map with keys: Normal, Delayed, Extended (or null on error)
+     */
     public Map<String, Integer> generateMonthlyTimeReport(int month, int year) {
         Map<String, Integer> stats = new HashMap<>();
         stats.put("Normal", 0);
@@ -1592,6 +1904,13 @@ public class DBController {
         return stats;
     }
 
+    /**
+     * Saves (or updates) the monthly time report into {@code monthly_time_report}.
+     *
+     * @param month month number (1-12)
+     * @param year  year number
+     * @param stats computed statistics map
+     */
     private void saveTimeReportToDB(int month, int year, Map<String, Integer> stats) {
         String sql = "INSERT INTO monthly_time_report (report_year, report_month, total_normal, total_delayed, total_extended, generated_date) " +
                      "VALUES (?, ?, ?, ?, ?, NOW()) " +
@@ -1624,6 +1943,15 @@ public class DBController {
         }
     }
     
+    /**
+     * Generates monthly subscriber activity stats:
+     * completed subscriber orders and subscriber waiting-list joins.
+     * Also persists the report to the DB.
+     *
+     * @param month month number (1-12)
+     * @param year  year number
+     * @return map with keys: Orders, WaitingList (or null on error)
+     */
     public Map<String, Integer> generateMonthlySubscriberReport(int month, int year) {
         Map<String, Integer> stats = new HashMap<>();
         stats.put("Orders", 0);
@@ -1685,6 +2013,13 @@ public class DBController {
         return stats;
     }
     
+    /**
+     * Saves (or updates) the monthly subscriber report into {@code monthly_subscriber_report}.
+     *
+     * @param month month number (1-12)
+     * @param year  year number
+     * @param stats computed statistics map
+     */
  // Helper method to save to the database
     private void saveSubscriberReportToDB(int month, int year, Map<String, Integer> stats) {
         String sql = "INSERT INTO monthly_subscriber_report (report_year, report_month, subscriber_orders, subscriber_waiting_list, generated_date) " +
@@ -1716,6 +2051,13 @@ public class DBController {
         }
     }
     
+    /**
+     * Auto-cancels ACTIVE reservations that were not checked in within 15 minutes of start_time.
+     * Sends a notification to email/phone if available.
+     *
+     * @param notifier notification service
+     * @return number of canceled reservations
+     */
     public int cancelNoShowReservations(NotificationService notifier) {
         PooledConnection pConn = null;
         int canceled = 0;
@@ -1917,6 +2259,14 @@ public class DBController {
         }
     }
 
+    /**
+     * Checks whether the current time is within today's working hours.
+     * Supports schedules that cross midnight.
+     *
+     * @param conn open DB connection
+     * @return true if within working hours, otherwise false
+     * @throws Exception if DB access fails
+     */
     private boolean isWithinWorkingHoursNow(Connection conn) throws Exception {
         LocalDateTime now = LocalDateTime.now();
 
@@ -1937,6 +2287,14 @@ public class DBController {
         }
     }
 
+    /**
+     * Loads the oldest waiting-list candidate and locks it FOR UPDATE.
+     * Treats NULL/empty status as WAITING.
+     *
+     * @param conn open DB connection
+     * @return waiting candidate or null if none
+     * @throws SQLException if DB operations fail
+     */
  private WaitingCandidate getOldestWaitingCandidateForUpdate(Connection conn) throws SQLException {
      // IMPORTANT: your join methods currently insert status NULL -> so we treat NULL as WAITING.
      String sql =
@@ -1974,6 +2332,13 @@ public class DBController {
      }
  }
 
+    /**
+     * If the waiting candidate is a subscriber and missing email/phone, loads contact info from users table.
+     *
+     * @param conn open DB connection
+     * @param c    waiting candidate to update
+     * @throws SQLException if DB operations fail
+     */
  private void fillSubscriberContactIfMissing(Connection conn, WaitingCandidate c) throws SQLException {
      String sql =
          "SELECT u.email, u.phone " +
@@ -1995,6 +2360,15 @@ public class DBController {
      }
  }
 
+    /**
+     * Finds an available table for NOW until NOW+2h for the given party size.
+     *
+     * @param conn  open DB connection
+     * @param now   current time
+     * @param diners party size
+     * @return table number or null if none is available
+     * @throws SQLException if DB operations fail
+     */
  private Integer findBestAvailableTableNow(Connection conn, LocalDateTime now, int diners) throws SQLException {
      LocalDateTime end = now.plusHours(2);
 
@@ -2022,6 +2396,15 @@ public class DBController {
      return null;
  }
 
+    /**
+     * Marks a waiting-list entry as INVITED and assigns a table, setting a 15-minute expiration.
+     *
+     * @param conn      open DB connection
+     * @param waitingId waiting_list id
+     * @param tableNum  assigned table number
+     * @return true if exactly one row was updated, otherwise false
+     * @throws SQLException if DB operations fail
+     */
  private boolean markWaitingInvited(Connection conn, int waitingId, int tableNum) throws SQLException {
      String sql =
          "UPDATE waiting_list " +
@@ -2035,6 +2418,13 @@ public class DBController {
      }
  }
  
+    /**
+     * Attempts to immediately assign a walk-in guest to an EMPTY table.
+     * Uses row locking to avoid concurrent assignment.
+     *
+     * @param diners party size
+     * @return assigned table number or null if none available / race lost
+     */
  public Integer tryAssignWalkInToEmptyTable(int diners)
  {
      PooledConnection pConn = null;
@@ -2115,6 +2505,16 @@ public class DBController {
          }
 
 
+    /**
+     * Creates an ACTIVE reservation using a waiting-list code (WLxxxxxx) for NOW -> NOW+2h.
+     *
+     * @param conn     open DB connection
+     * @param c        waiting candidate
+     * @param tableNum assigned table number
+     * @param now      start time
+     * @return true if insert succeeded, otherwise false
+     * @throws SQLException if DB operations fail
+     */
  private boolean createReservationFromWaiting(Connection conn, WaitingCandidate c, int tableNum, LocalDateTime now) throws SQLException {
      // Create reservation for NOW->NOW+2h with the waiting code (WLxxxx).
      // subscriber_number in reservations is VARCHAR in your system (SUB123 or null) -> we use it directly.
@@ -2145,6 +2545,13 @@ public class DBController {
      }
  }
 
+    /**
+     * Marks an INVITED waiting-list entry as EXPIRED (typically after a failed reservation insert).
+     *
+     * @param conn        open DB connection
+     * @param waitingCode waiting confirmation code
+     * @throws SQLException if DB operations fail
+     */
  private void markWaitingExpired(Connection conn, String waitingCode) throws SQLException {
      String sql =
          "UPDATE waiting_list " +
@@ -2156,6 +2563,9 @@ public class DBController {
      }
  }
 
+    /**
+     * Internal container for a waiting-list candidate selected for invitation.
+     */
  private static class WaitingCandidate {
      int id;
      int diners;
@@ -2164,6 +2574,13 @@ public class DBController {
      String phone;
      String email;
  }
+
+    /**
+     * Sends email reminders 2 hours before ACTIVE reservations (only once per reservation).
+     *
+     * @param notifier notification service
+     * @return number of reminders sent
+     */
  public int sendReservationReminders(NotificationService notifier) {
 	    PooledConnection pConn = null;
 	    int sent = 0;
@@ -2262,6 +2679,9 @@ public class DBController {
 	* Cancels future reservations on a specific date that no longer fit inside CURRENT opening hours
 	* (special overrides first, then regular).
 	*
+	* @param dateYYYYMMDD date in {@code YYYY-MM-DD}
+	* @param notifier notification service
+	* @param reason cancellation reason text
 	* @return number of canceled reservations
 	*/
 	public int cancelReservationsImpactedByDateHoursChange(String dateYYYYMMDD, NotificationService notifier, String reason) {
@@ -2289,6 +2709,9 @@ public class DBController {
 	* Cancels impacted future reservations for the next month for a weekly day (MONDAY, TUESDAY...).
 	* Uses CURRENT opening hours logic (special overrides first).
 	*
+	* @param dayName day-of-week name (e.g., "MONDAY")
+	* @param notifier notification service
+	* @param reason cancellation reason text
 	* @return number of canceled reservations
 	*/
 	public int cancelReservationsImpactedByWeeklyHoursChange(String dayName, NotificationService notifier, String reason) {
@@ -2322,6 +2745,11 @@ public class DBController {
 	
 	/**
 	* Cancels future reservations assigned to a table that was removed.
+	*
+	* @param tableNumber removed table number
+	* @param notifier notification service
+	* @param reason cancellation reason text
+	* @return number of canceled reservations
 	*/
 	public int cancelFutureReservationsDueToTableRemoval(int tableNumber, NotificationService notifier, String reason) {
 	  PooledConnection pConn = null;
@@ -2388,6 +2816,12 @@ public class DBController {
 	
 	/**
 	* Cancels future reservations on a table that no longer fits the new capacity (diners > newCapacity).
+	*
+	* @param tableNumber table being resized
+	* @param newCapacity new maximum capacity
+	* @param notifier notification service
+	* @param reason cancellation reason text
+	* @return number of canceled reservations
 	*/
 	public int cancelFutureReservationsDueToTableCapacityChange(int tableNumber, int newCapacity, NotificationService notifier, String reason) {
 	  PooledConnection pConn = null;
@@ -2455,6 +2889,17 @@ public class DBController {
 	
 	//-------------------- internal helpers --------------------
 	
+	/**
+	 * Cancels all ACTIVE future reservations on a date that no longer fit current hours (or if closed).
+	 * Sends cancellation notifications after commit.
+	 *
+	 * @param conn     open DB connection
+	 * @param date     target date
+	 * @param notifier notification service
+	 * @param reason   cancellation reason
+	 * @return number of canceled reservations
+	 * @throws Exception if DB operations fail
+	 */
 	private int cancelOnDateOutsideCurrentHours(Connection conn, LocalDate date, NotificationService notifier, String reason) throws Exception {
 	  int canceled = 0;
 	
@@ -2522,6 +2967,12 @@ public class DBController {
 	  return canceled;
 	}
 	
+	/**
+	 * Sends cancellation notifications for a list of canceled reservations.
+	 *
+	 * @param notices cancel notice objects
+	 * @param notifier notification service
+	 */
 	private void sendCancelNotices(List<CancelNotice> notices, NotificationService notifier) {
 	  for (CancelNotice n : notices) {
 	      String when = (n.start == null) ? "" : (n.start.toLocalDate() + " " + n.start.toLocalTime());
@@ -2541,6 +2992,13 @@ public class DBController {
 }
 
 
+	/**
+	 * Automatically completes CHECKED_IN reservations that have been checked in for 2 hours or more.
+	 * Creates a bill, marks reservation as COMPLETED, and sends an email receipt.
+	 *
+	 * @param notifier notification service
+	 * @return number of reservations processed
+	 */
 	//Add to your BistroDBController (or equivalent class)
 		public int autoCompleteFinishedReservations(NotificationService notifier) {
 		  PooledConnection pConn = null;

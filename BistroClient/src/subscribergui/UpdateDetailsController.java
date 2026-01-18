@@ -10,19 +10,60 @@ import javafx.scene.control.TextField;
 
 import java.util.function.BiConsumer;
 
+/**
+ * JavaFX controller for updating a subscriber's contact details.
+ * <p>
+ * Allows a subscriber to update their email and phone number. Sends an update request to the
+ * server and updates both UI and local session data upon success. A callback can be provided
+ * to propagate the updated values back to the parent controller.
+ */
 public class UpdateDetailsController {
 
+    /**
+     * Text field for editing the subscriber's email address.
+     */
     @FXML private TextField emailField;
+
+    /**
+     * Text field for editing the subscriber's phone number.
+     */
     @FXML private TextField phoneField;
+
+    /**
+     * Button used to trigger saving the updated details.
+     */
     @FXML private Button saveBtn;
+
+    /**
+     * Label used to display status messages and validation errors.
+     */
     @FXML private Label statusLabel;
 
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
+
+    /**
+     * Subscriber identifier whose details are being updated.
+     */
     private int subscriberId = -1;
 
-    // callback to update SubscriberMainController fields after success
+    /**
+     * Callback invoked after a successful update to propagate the new email and phone
+     * back to the owning controller (e.g., {@code SubscriberMainController}).
+     */
     private BiConsumer<String, String> onUpdated;
 
+    /**
+     * Initializes this controller with the required context and pre-fills the form fields.
+     *
+     * @param client       the connected {@link ClientController} used to send the update request
+     * @param subscriberId the subscriber identifier to update
+     * @param currentEmail the currently stored email to pre-fill in the form
+     * @param currentPhone the currently stored phone to pre-fill in the form
+     * @param onUpdated    callback invoked with {@code (newEmail, newPhone)} after success
+     */
     public void init(ClientController client,
                      int subscriberId,
                      String currentEmail,
@@ -39,6 +80,12 @@ public class UpdateDetailsController {
         setStatus("", false);
     }
 
+    /**
+     * Handles the save action for updating subscriber details.
+     * <p>
+     * Performs basic validation, sets an active handler to process the server response,
+     * and sends the update request to the server.
+     */
     @FXML
     private void handleSave() {
         if (client == null) {
@@ -109,6 +156,12 @@ public class UpdateDetailsController {
         client.updateSubscriberDetails(subscriberId, newEmail, newPhone);
     }
 
+    /**
+     * Updates the status label styling and optionally disables the save button while saving.
+     *
+     * @param text the message to show
+     * @param ok   {@code true} to show a success style; {@code false} to show an error style
+     */
     private void setStatus(String text, boolean ok) {
         if (statusLabel == null) return;
         statusLabel.setText(text == null ? "" : text);

@@ -14,40 +14,122 @@ import javafx.animation.PauseTransition;
 import javafx.util.Duration;
 
 
+/**
+ * JavaFX controller for creating reservations as a guest or subscriber.
+ * <p>
+ * Supports:
+ * <ul>
+ *   <li>Checking available reservation time slots for a selected date and party size</li>
+ *   <li>Submitting a reservation request for a chosen date/time</li>
+ *   <li>Subscriber mode with auto-filled/locked contact details</li>
+ * </ul>
+ * Uses {@link ClientSession#activeHandler} to receive asynchronous responses from the server.
+ */
 public class ReservationController {
 
+    /**
+     * Entry mode for this screen (HOME vs RESTAURANT), retained for future behavior differences.
+     */
     public enum EntryMode { HOME, RESTAURANT }
 
+    /**
+     * Maximum number of diners allowed for a single reservation request.
+     */
     private static final int MAX_DINERS = 10;
 
+    /**
+     * Date picker for selecting the reservation date.
+     */
     @FXML private DatePicker datePicker;
+
+    /**
+     * Combo box for selecting or typing a reservation time (HH:mm).
+     */
     @FXML private ComboBox<String> timeCombo;
+
+    /**
+     * Text field for entering the number of diners.
+     */
     @FXML private TextField dinersField;
+
+    /**
+     * Text field for entering the contact phone number (guest mode).
+     */
     @FXML private TextField phoneField;
+
+    /**
+     * Text field for entering the contact email address (guest mode).
+     */
     @FXML private TextField emailField;
+
+    /**
+     * Label used to display status messages and validation/errors to the user.
+     */
     @FXML private Label statusLabel;
 
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
 
+    /**
+     * Indicates whether this controller is operating in subscriber mode.
+     */
     // Subscriber mode
     private boolean subscriberMode = false;
+
+    /**
+     * Subscriber ID used to associate reservations with a subscriber account.
+     */
     private int subscriberId = -1;
+
+    /**
+     * Reserved for a possible timeout mechanism in the reservation flow.
+     */
     private PauseTransition reserveTimeout;
+
+    /**
+     * Flag indicating whether a reservation reply is currently being awaited.
+     */
     private boolean waitingReserveReply = false;
+
+    /**
+     * Indicates whether a reservation reply has arrived (used for fallback behavior).
+     */
     private volatile boolean reserveReplyArrived = false;
 
 
+    /**
+     * Current entry mode for the screen (HOME/RESTAURANT).
+     */
     // Mode (Home / Restaurant) - kept if you need it later
     private EntryMode entryMode = EntryMode.HOME;
 
+    /**
+     * Sets the client controller used for server communication.
+     *
+     * @param client the connected {@link ClientController}
+     */
     public void setClient(ClientController client) {
         this.client = client;
     }
 
+    /**
+     * Sets the entry mode for this screen.
+     *
+     * @param mode the desired {@link EntryMode}; defaults to {@link EntryMode#HOME} if null
+     */
     public void setEntryMode(EntryMode mode) {
         this.entryMode = (mode == null) ? EntryMode.HOME : mode;
     }
 
+    /**
+     * Enables subscriber mode and auto-fills/locks the email and phone fields.
+     *
+     * @param id    subscriber ID
+     * @param email subscriber email (may be null)
+     * @param phone subscriber phone (may be null)
+     */
     public void setSubscriberInfo(int id, String email, String phone) {
         subscriberMode = true;
         subscriberId = id;
@@ -62,6 +144,11 @@ public class ReservationController {
         }
     }
 
+    /**
+     * JavaFX initialization hook.
+     * <p>
+     * Initializes default diners value, enables editable time input, and shows initial guidance.
+     */
     @FXML
     public void initialize() {
         dinersField.setText("2");
@@ -69,6 +156,13 @@ public class ReservationController {
         setStatus("Pick date + diners, then type a time (HH:mm) or click Check availability.");
     }
 
+    /**
+     * Handles checking availability for a given date and diners count.
+     * <p>
+     * Validates inputs and constraints (date range, diners range, optional typed time format),
+     * registers an active handler to receive a list of available slots, and requests slots from
+     * the server.
+     */
     @FXML
     private void handleCheckAvailability() {
         if (client == null) {
@@ -186,6 +280,13 @@ public class ReservationController {
         client.requestAvailableSlots(date.toString(), diners);
     }
 
+    /**
+     * Handles submitting a reservation request.
+     * <p>
+     * Validates date/time/diners and contact details, registers an active handler to process the
+     * server response, and sends the reservation creation request. If the reservation is full,
+     * triggers a slots reload flow to help the user pick another time.
+     */
     @FXML
     private void handleReserve() {
         if (client == null) {
@@ -292,6 +393,17 @@ public class ReservationController {
 
 
 
+    /**
+     * Requests available slots from the server and opens the time dropdown when the previously
+     * requested time is not available.
+     * <p>
+     * Updates the time list, clears the invalid time selection, and prompts the user to choose
+     * an available option.
+     *
+     * @param dateStr        reservation date string (typically {@code YYYY-MM-DD})
+     * @param diners         number of diners (party size)
+     * @param requestedTime  the time that was requested but found unavailable
+     */
     // ✅ One helper used by Reserve-full behavior
     private void loadSlotsAndOpen(String dateStr, int diners, String requestedTime) {
 
@@ -327,6 +439,12 @@ public class ReservationController {
 
 
 
+    /**
+     * Parses a positive integer from the provided string.
+     *
+     * @param s input string to parse
+     * @return parsed positive integer, or {@code -1} if parsing fails or value is not positive
+     */
     private int parsePositiveInt(String s) {
         try {
             int x = Integer.parseInt(s.trim());
@@ -336,6 +454,11 @@ public class ReservationController {
         }
     }
 
+    /**
+     * Updates the status label text if available.
+     *
+     * @param msg the message to display
+     */
     private void setStatus(String msg) {
         if (statusLabel != null) statusLabel.setText(msg);
     }

@@ -6,11 +6,31 @@ import jakarta.mail.internet.MimeMessage;
 
 import java.util.Properties;
 
+/**
+ * Notification service implementation that sends email notifications via Gmail's SMTP server.
+ * <p>
+ * This service uses an application-specific password for authentication and supports sending
+ * plain-text email messages. SMS sending is not supported by Gmail SMTP and is therefore mocked.
+ * </p>
+ */
 public class GmailSmtpNotificationService implements NotificationService {
 
+    /**
+     * Pre-configured Jakarta Mail session used to create and send messages through Gmail SMTP.
+     */
     private final Session session;
+
+    /**
+     * The sender email address used as the "From" address for outgoing emails.
+     */
     private final String fromEmail;
 
+    /**
+     * Constructs a Gmail SMTP notification service using the provided sender email and Gmail app password.
+     *
+     * @param fromEmail    the sender email address to use as the "From" address
+     * @param appPassword  the Gmail application password used for SMTP authentication
+     */
     public GmailSmtpNotificationService(String fromEmail, String appPassword) {
         this.fromEmail = fromEmail;
 
@@ -29,6 +49,13 @@ public class GmailSmtpNotificationService implements NotificationService {
         });
     }
 
+    /**
+     * Sends a plain-text email message to the specified recipient using Gmail SMTP.
+     *
+     * @param toEmail  the recipient email address
+     * @param subject  the email subject line
+     * @param body     the plain-text email body
+     */
     @Override
     public void sendEmail(String toEmail, String subject, String body) {
         try {
@@ -47,6 +74,16 @@ public class GmailSmtpNotificationService implements NotificationService {
         }
     }
 
+    /**
+     * Sends an SMS message to the specified phone number.
+     * <p>
+     * Gmail SMTP cannot send real SMS messages, so this method provides a mock implementation
+     * that logs the message to the console.
+     * </p>
+     *
+     * @param toPhone  the destination phone number
+     * @param body     the SMS message body
+     */
     @Override
     public void sendSms(String toPhone, String body) {
         // Gmail cannot send real SMS -> mock for now

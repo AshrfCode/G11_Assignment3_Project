@@ -8,8 +8,18 @@ import java.sql.Timestamp;
 import server.MySQLConnectionPool;
 import server.PooledConnection;
 
+/**
+ * Data Access Object (DAO) responsible for reservation-related database operations.
+ * <p>
+ * This class currently focuses on the customer check-in flow, validating an active reservation
+ * by confirmation code and updating reservation status accordingly.
+ * </p>
+ */
 public class ReservationDAO { 
 
+    /**
+     * Shared MySQL connection pool used to obtain and release database connections.
+     */
     private final MySQLConnectionPool pool = MySQLConnectionPool.getInstance();
 
     /**
@@ -76,6 +86,13 @@ public class ReservationDAO {
         }
     }
 
+    /**
+     * Updates the specified reservation to {@code CHECKED_IN} and sets {@code check_in_time} to the current time.
+     *
+     * @param conn the active database connection to use
+     * @param reservationId the reservation identifier to update
+     * @throws SQLException if a database access error occurs while updating the reservation
+     */
     private void updateReservationToCheckedIn(Connection conn, int reservationId) throws SQLException {
         String update =
                 "UPDATE reservations " +
@@ -87,6 +104,14 @@ public class ReservationDAO {
         }
     }
 
+    /**
+     * Updates the status of the specified reservation.
+     *
+     * @param conn the active database connection to use
+     * @param reservationId the reservation identifier to update
+     * @param status the new status value to set
+     * @throws SQLException if a database access error occurs while updating the reservation status
+     */
     private void updateReservationStatus(Connection conn, int reservationId, String status) throws SQLException {
         String update = "UPDATE reservations SET status = ? WHERE reservation_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(update)) {

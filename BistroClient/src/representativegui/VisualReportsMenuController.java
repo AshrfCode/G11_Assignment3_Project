@@ -8,19 +8,50 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.layout.StackPane;
 
+/**
+ * JavaFX controller for the visual reports menu.
+ * <p>
+ * Provides navigation actions to load specific visual report views (charts) into the main
+ * content area. Requires a connected {@link ClientController} and a reference to the
+ * {@link StackPane} container where report views should be displayed.
+ */
 public class VisualReportsMenuController {
 
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
+
+    /**
+     * Reference to the main area used to display report views.
+     */
     private StackPane mainContentArea; // Reference to the main area to load the actual charts later
 
+    /**
+     * Sets the client instance used for server communication.
+     *
+     * @param client the connected {@link ClientController}
+     */
     public void setClient(ClientController client) {
         this.client = client;
     }
 
+    /**
+     * Sets the container in which report views will be loaded.
+     *
+     * @param contentArea the main content {@link StackPane}
+     */
     public void setMainContentArea(StackPane contentArea) {
         this.mainContentArea = contentArea;
     }
 
+    /**
+     * Loads and displays the monthly time performance report view.
+     * <p>
+     * Injects the connected {@link ClientController} and main content area reference into the
+     * loaded {@link PerformanceReportController} so that the report can request data and the
+     * back navigation can return to this menu.
+     */
     @FXML
     private void showTimeReport() {
         if (mainContentArea == null || client == null) {
@@ -48,6 +79,13 @@ public class VisualReportsMenuController {
         }
     }
 
+    /**
+     * Loads and displays the subscribers report view.
+     * <p>
+     * Injects the connected {@link ClientController} and main content area reference into the
+     * loaded {@link SubscriberReportController} so that the report can request data and the
+     * back navigation can return to this menu.
+     */
     @FXML
     private void showSubscribersReport() {
         try {

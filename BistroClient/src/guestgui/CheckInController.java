@@ -16,28 +16,78 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
+/**
+ * JavaFX controller for the check-in flow.
+ * <p>
+ * Allows guests (and subscribers) to check in using a reservation confirmation code.
+ * Supports optional quick-selection of active subscriber reservation codes and a
+ * "forgot confirmation code" dialog that requests email and phone.
+ */
 public class CheckInController {
 
+    /**
+     * Text field for entering a reservation confirmation code.
+     */
     @FXML private TextField codeField;
+
+    /**
+     * Label used to display status messages and errors to the user.
+     */
     @FXML private Label statusLabel;
     
+    /**
+     * Container for the quick-select list of active reservation codes (subscriber flow).
+     */
     @FXML private VBox quickSelectBox;
+
+    /**
+     * List view displaying active reservation codes for quick selection.
+     */
     @FXML private ListView<String> codeList;
 
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
 
+    /**
+     * Email value used to prefill the "forgot confirmation code" dialog.
+     */
     private String prefillEmail = "";
+
+    /**
+     * Phone value used to prefill the "forgot confirmation code" dialog.
+     */
     private String prefillPhone = "";
 
+    /**
+     * Sets optional prefill values for the "forgot confirmation code" dialog.
+     *
+     * @param email email to prefill (may be null)
+     * @param phone phone to prefill (may be null)
+     */
     public void setPrefill(String email, String phone) {
         this.prefillEmail = (email == null) ? "" : email.trim();
         this.prefillPhone = (phone == null) ? "" : phone.trim();
     }
 
+    /**
+     * Sets the client controller used for server requests.
+     *
+     * @param client the connected {@link ClientController}
+     */
     public void setClient(ClientController client) {
         this.client = client;
     }
     
+    /**
+     * Displays a quick-select list of active reservation codes for a subscriber.
+     * <p>
+     * If no codes are provided, the quick-select UI is hidden.
+     * Selecting a code fills the confirmation code field; double-clicking can trigger check-in.
+     *
+     * @param activeCodes list of active reservation confirmation codes (may be null/empty)
+     */
     /**
      * ✅ NEW METHOD: Call this ONLY from SubscriberGUI.
      * If the user has active reservations, show them.
@@ -73,6 +123,12 @@ public class CheckInController {
         });
     }
 
+    /**
+     * Handles the check-in action.
+     * <p>
+     * Validates the confirmation code, registers an active handler to process the server response,
+     * and sends a check-in request. On success, the server is expected to return a table number.
+     */
     @FXML
     private void handleCheckIn() {
         if (client == null) {
@@ -103,6 +159,12 @@ public class CheckInController {
         client.checkInCustomer(code);
     }
 
+    /**
+     * Handles the "forgot confirmation code" action.
+     * <p>
+     * Prompts the user for the same email and phone used in the reservation (with optional prefills),
+     * registers an active handler for the server reply, and sends the forgot-code request.
+     */
     @FXML
     private void handleForgot() {
         if (client == null) {
@@ -161,6 +223,11 @@ public class CheckInController {
         client.forgotConfirmationCode(email, phone);
     }
 
+    /**
+     * Updates the status label text and applies simple styling based on success/error state.
+     *
+     * @param text the status text to display
+     */
     private void setStatus(String text) {
         if (statusLabel != null) {
             statusLabel.setText(text);
@@ -172,6 +239,11 @@ public class CheckInController {
         }
     }
 
+    /**
+     * Displays a modal success alert indicating the assigned table number.
+     *
+     * @param tableNumber the assigned table number returned by the server
+     */
     private void showSuccessAlert(int tableNumber) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Check In Successful");

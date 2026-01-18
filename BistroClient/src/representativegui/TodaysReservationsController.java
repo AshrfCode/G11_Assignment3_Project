@@ -18,22 +18,61 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/**
+ * JavaFX controller for displaying today's reservations in a table view.
+ * <p>
+ * Receives a list of formatted strings from the server, parses them into {@link Reservation}
+ * objects, and displays them in a {@link TableView}. Provides a refresh button that triggers
+ * a caller-provided {@link Runnable} action.
+ */
 public class TodaysReservationsController {
 
-    // Use <Reservation> instead of <ReservationEntry>
+    /**
+     * Table view displaying today's reservations.
+     */
     @FXML private TableView<Reservation> reservationsTable;
     
-    // Columns still display Strings
+    /**
+     * Column displaying the reservation start time (formatted as {@code HH:mm}).
+     */
     @FXML private TableColumn<Reservation, String> colTime;
+
+    /**
+     * Column displaying the number of diners.
+     */
     @FXML private TableColumn<Reservation, String> colDiners;
+
+    /**
+     * Column displaying the assigned table number.
+     */
     @FXML private TableColumn<Reservation, String> colTable;
+
+    /**
+     * Column displaying the reservation confirmation code.
+     */
     @FXML private TableColumn<Reservation, String> colCode;
     
+    /**
+     * Label used to show status messages (loading state, errors, and totals).
+     */
     @FXML private Label statusLabel;
+
+    /**
+     * Button that triggers a refresh action provided by the parent controller.
+     */
     @FXML private Button refreshBtn;
 
+    /**
+     * Action invoked when the refresh button is pressed.
+     */
     private Runnable refreshAction;
 
+    /**
+     * JavaFX initialization hook.
+     * <p>
+     * Binds table columns to {@link Reservation} properties and configures the refresh behavior.
+     * The time column converts the {@link Timestamp} start time into a string representation.
+     */
     @FXML
     public void initialize() {
         // 1. Map Time: Convert Timestamp back to "HH:mm" string for display
@@ -60,10 +99,27 @@ public class TodaysReservationsController {
         });
     }
 
+    /**
+     * Sets the action executed when the refresh button is pressed.
+     *
+     * @param action the refresh action to invoke
+     */
     public void setRefreshAction(Runnable action) {
         this.refreshAction = action;
     }
 
+    /**
+     * Parses the server-provided reservation strings and updates the table view.
+     * <p>
+     * Expected input lines are in the format:
+     * {@code "🕒 12:00 | 👥 4 | 🍽️ Table 5 | 🔑 ABC12"}.
+     * <p>
+     * For each valid line, this method creates a {@link Reservation}, populates key fields,
+     * converts the parsed time into a {@link Timestamp} using today's date, and inserts the
+     * object into the table.
+     *
+     * @param rawServerStrings list of formatted reservation strings received from the server
+     */
     public void updateTableData(List<String> rawServerStrings) {
         ObservableList<Reservation> data = FXCollections.observableArrayList();
 

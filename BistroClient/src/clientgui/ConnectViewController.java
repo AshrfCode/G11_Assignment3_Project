@@ -13,17 +13,38 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
+/**
+ * JavaFX controller for the connection screen.
+ * <p>
+ * Allows the user to enter the server IP and port, initializes default values,
+ * configures the client connection settings, and navigates to the sign-in screen.
+ */
 public class ConnectViewController {
 
+    /**
+     * Text field for entering the server IP/host.
+     */
     @FXML
     private TextField ipField;
 
+    /**
+     * Text field for entering the server port.
+     */
     @FXML
     private TextField portField;
 
+    /**
+     * Label used to display connection status and validation errors.
+     */
     @FXML
     private Label statusLabel;
 
+    /**
+     * JavaFX initialization hook.
+     * <p>
+     * Attempts to auto-fill the local machine IP address; falls back to {@code localhost}.
+     * Sets the default port to {@code 5555}.
+     */
     @FXML
     public void initialize() {
         try {
@@ -35,6 +56,12 @@ public class ConnectViewController {
         portField.setText("5555");
     }
 
+    /**
+     * Handles the connect action.
+     * <p>
+     * Validates the port input, configures the client connection parameters, loads the
+     * sign-in screen, and replaces the current stage scene.
+     */
     @FXML
     private void handleConnect() {
         String ip = ipField.getText().trim();

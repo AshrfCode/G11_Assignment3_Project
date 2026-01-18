@@ -8,8 +8,18 @@ import java.sql.*;
 
 public class OpeningHoursDAO {
 
+    /**
+     * Shared MySQL connection pool used to obtain and release database connections.
+     */
     private final MySQLConnectionPool pool = MySQLConnectionPool.getInstance();
 
+    /**
+     * Retrieves opening hours for a specific day from the {@code opening_hours} table.
+     *
+     * @param day the day identifier to query (e.g., "MONDAY", "Sunday", depending on DB convention)
+     * @return an {@link OpeningHours} object if a matching row exists; {@code null} otherwise
+     * @throws SQLException if a database access error occurs
+     */
     public OpeningHours getByDay(String day) throws SQLException {
 
         PooledConnection pConn = null;
@@ -35,6 +45,14 @@ public class OpeningHoursDAO {
         }
     }
 
+    /**
+     * Updates the opening and closing times for a specific day in the {@code opening_hours} table.
+     *
+     * @param day the day identifier whose hours should be updated
+     * @param open the new opening time
+     * @param close the new closing time
+     * @throws SQLException if a database access error occurs
+     */
     public void updateHours(String day, Time open, Time close) throws SQLException {
         PooledConnection pConn = null;
         try {

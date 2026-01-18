@@ -17,18 +17,49 @@ import java.io.IOException;
 import java.time.Year;
 import java.util.Map;
 
+/**
+ * JavaFX controller for generating and displaying a monthly performance report.
+ * <p>
+ * Requests aggregated reservation timing statistics from the server for a selected month/year
+ * and visualizes the results in a {@link PieChart}. Uses {@link ClientSession#activeHandler}
+ * to process the asynchronous response.
+ */
 public class PerformanceReportController {
 
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
+
+    /**
+     * Main content container used for navigation back to the visual reports menu.
+     */
     private StackPane mainContentArea; // Required to go back to the menu
 
+    /**
+     * Combo box for selecting the report month (1-12).
+     */
     @FXML private ComboBox<String> monthCombo;
+
+    /**
+     * Combo box for selecting the report year (e.g., current and previous year).
+     */
     @FXML private ComboBox<String> yearCombo;
+
+    /**
+     * Pie chart used to visualize the report statistics.
+     */
     @FXML private PieChart pieChart;
+
+    /**
+     * Label used to display status messages and errors.
+     */
     @FXML private Label statusLabel;
 
     /**
      * Sets the client instance for server communication.
+     *
+     * @param client the connected {@link ClientController}
      */
     public void setClient(ClientController client) {
         this.client = client;
@@ -36,11 +67,18 @@ public class PerformanceReportController {
 
     /**
      * Sets the main content area (StackPane) to allow navigation back to the menu.
+     *
+     * @param area the container in which this view is displayed
      */
     public void setMainContentArea(StackPane area) {
         this.mainContentArea = area;
     }
 
+    /**
+     * JavaFX initialization hook.
+     * <p>
+     * Populates the month/year selectors with defaults and common options.
+     */
     @FXML
     public void initialize() {
         // 1. Setup Month Dropdown (1-12)
@@ -61,6 +99,12 @@ public class PerformanceReportController {
         yearCombo.getSelectionModel().select(String.valueOf(currentYear)); 
     }
 
+    /**
+     * Loads performance data for the selected month/year and updates the chart.
+     * <p>
+     * Installs an active handler that expects a {@code Map<String, Integer>} from the server,
+     * then converts it into pie chart slices.
+     */
     @FXML
     private void loadData() {
         if (client == null) {
@@ -95,6 +139,11 @@ public class PerformanceReportController {
         client.requestMonthlyTimeReport(m, y);
     }
 
+    /**
+     * Builds and applies pie chart data from the provided statistics map.
+     *
+     * @param stats map of category name to count (e.g., Normal/Delayed/Extended)
+     */
     private void updateChart(Map<String, Integer> stats) {
         ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
 
@@ -106,6 +155,13 @@ public class PerformanceReportController {
         pieChart.setData(pieData);
     }
 
+    /**
+     * Adds a pie slice to the chart data only when the value is greater than zero.
+     *
+     * @param list  target list of pie chart data
+     * @param name  slice/category name
+     * @param value slice value (count)
+     */
     private void addSlice(ObservableList<PieChart.Data> list, String name, int value) {
         if (value > 0) {
             // Format label like: "Normal (15)"
@@ -113,6 +169,12 @@ public class PerformanceReportController {
         }
     }
 
+    /**
+     * Navigates back to the visual reports menu view.
+     * <p>
+     * Reloads {@code VisualReportsMenu.fxml}, re-injects the client and content container,
+     * and swaps the view inside {@link #mainContentArea}.
+     */
     @FXML
     private void handleBack() {
         // Go back to the VisualReportsMenu

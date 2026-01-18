@@ -16,33 +16,104 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+/**
+ * JavaFX main controller for the subscriber area.
+ * <p>
+ * Hosts navigation between subscriber-related screens (reservation, cancellation, waiting list,
+ * payment, check-in, profile updates, and history) within a central {@link StackPane}.
+ * Maintains subscriber context (id/email/phone) to support auto-filled flows and server requests.
+ */
 public class SubscriberMainController {
 
+    /**
+     * Defines the entry mode that affects available features and UI badges.
+     */
     public enum EntryMode { HOME, RESTAURANT }
 
+    /**
+     * Section title label for the currently displayed view.
+     */
     @FXML private Label sectionTitle;
+
+    /**
+     * Badge label showing the current mode (Home/Restaurant).
+     */
     @FXML private Label modeBadge;
+
+    /**
+     * Greeting label shown to the subscriber.
+     */
     @FXML private Label heyUserLabel;
+
+    /**
+     * Main content area where sub-views are loaded.
+     */
     @FXML private StackPane contentArea;
+
+    /**
+     * Button for accessing the waiting list view (visible only in restaurant mode).
+     */
     @FXML private Button waitingListBtn;
+
+    /**
+     * Button for accessing the check-in view (visible only in restaurant mode).
+     */
     @FXML private Button checkInBtn;
 
-
+    /**
+     * Current entry mode (Home/Restaurant).
+     */
     private EntryMode entryMode = EntryMode.HOME;
+
+    /**
+     * Display name for the subscriber.
+     */
     private String username = "Subscriber";
 
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
+
+    /**
+     * Subscriber identifier used for subscriber-only server operations.
+     */
     private int subscriberId = -1;
+
+    /**
+     * Subscriber email used for auto-fill and update operations.
+     */
     private String subscriberEmail = "";
+
+    /**
+     * Subscriber phone used for auto-fill and update operations.
+     */
     private String subscriberPhone = "";
 
+    /**
+     * JavaFX initialization hook.
+     * <p>
+     * Applies UI state based on the current mode and sets the initial greeting.
+     */
     @FXML
     public void initialize() {
         applyModeUI();
         setUsername(username);
     }
 
-    // Called after login
+    /**
+     * Initializes the controller after a successful subscriber login.
+     * <p>
+     * Stores the connected client and subscriber context, applies the chosen entry mode,
+     * updates the greeting, and loads the reservation screen by default.
+     *
+     * @param client   the connected {@link ClientController}
+     * @param mode     the entry mode (home or restaurant)
+     * @param username the display name of the subscriber
+     * @param id       the subscriber ID
+     * @param email    the subscriber email (used for auto-fill)
+     * @param phone    the subscriber phone (used for auto-fill)
+     */
     public void initAfterLogin(ClientController client, EntryMode mode,
                                String username, int id, String email, String phone) {
 
@@ -59,16 +130,31 @@ public class SubscriberMainController {
         showReservation();
     }
 
+    /**
+     * Updates the current entry mode and applies mode-specific UI visibility rules.
+     *
+     * @param mode the new entry mode
+     */
     public void setEntryMode(EntryMode mode) {
         this.entryMode = mode;
         applyModeUI();
     }
 
+    /**
+     * Sets the displayed username and updates the greeting label.
+     *
+     * @param username the subscriber display name
+     */
     public void setUsername(String username) {
         if (username != null && !username.trim().isEmpty()) this.username = username.trim();
         if (heyUserLabel != null) heyUserLabel.setText("Hey " + this.username);
     }
 
+    /**
+     * Applies UI changes based on the current {@link #entryMode}.
+     * <p>
+     * Toggles visibility/management of restaurant-only actions and updates the mode badge.
+     */
     private void applyModeUI() {
         boolean isRestaurant = (entryMode == EntryMode.RESTAURANT);
 
@@ -90,6 +176,11 @@ public class SubscriberMainController {
 
     // ---------------- NAV ACTIONS ----------------
 
+    /**
+     * Loads the reservation creation view into the content area in subscriber mode.
+     * <p>
+     * Clears any existing active handler and injects subscriber info for auto-fill and ownership logic.
+     */
     @FXML
     private void showReservation() {
         setSection("Make Reservation");
@@ -110,6 +201,11 @@ public class SubscriberMainController {
         }
     }
 
+    /**
+     * Loads the reservation cancellation view into the content area in subscriber mode.
+     * <p>
+     * Clears any existing active handler and injects subscriber info to enforce ownership restrictions.
+     */
     @FXML
     private void showCancelReservation() {
         setSection("Cancel Reservation");
@@ -130,6 +226,11 @@ public class SubscriberMainController {
         }
     }
 
+    /**
+     * Loads the subscriber waiting list view into the content area and initializes it with subscriber context.
+     * <p>
+     * Clears any existing active handler before loading the view.
+     */
     @FXML
     private void showWaitingList() {
         setSection("Waiting List");
@@ -151,6 +252,11 @@ public class SubscriberMainController {
         }
     }
 
+    /**
+     * Loads the payment view into the content area.
+     * <p>
+     * Clears any existing active handler and injects the connected client.
+     */
     @FXML
     private void showPayment() {
         setSection("Pay");
@@ -170,6 +276,14 @@ public class SubscriberMainController {
         }
     }
 
+    /**
+     * Loads the check-in view into the content area for restaurant mode usage.
+     * <p>
+     * Attempts to locate the check-in FXML under multiple expected names, injects client and
+     * prefill data, requests active reservation codes for the subscriber, and passes them to the UI.
+     *
+     * @throws IllegalStateException if the check-in FXML resource cannot be found
+     */
     @FXML
     private void showCheckIn() {
 
@@ -214,6 +328,12 @@ public class SubscriberMainController {
         }
     }
 
+    /**
+     * Loads the update details view and initializes it with the subscriber's current contact details.
+     * <p>
+     * Clears any existing active handler and provides a callback that updates local cached
+     * email/phone fields after a successful update.
+     */
     @FXML
     private void showUpdateDetails() {
         setSection("Update Details");
@@ -244,7 +364,11 @@ public class SubscriberMainController {
         }
     }
 
-
+    /**
+     * Loads the reservation history view and triggers a history request for the subscriber.
+     * <p>
+     * Clears any existing active handler and initializes the history controller with the subscriber ID.
+     */
     @FXML
     private void showHistory() {
         setSection("View History");
@@ -264,6 +388,9 @@ public class SubscriberMainController {
         }
     }
 
+    /**
+     * Logs out the current user, clears session state, and navigates back to the sign-in screen.
+     */
     @FXML
     private void handleLogout() {
         try {
@@ -286,10 +413,20 @@ public class SubscriberMainController {
 
     // ---------------- HELPERS ----------------
 
+    /**
+     * Updates the section title displayed in the UI.
+     *
+     * @param title the new section title
+     */
     private void setSection(String title) {
         if (sectionTitle != null) sectionTitle.setText(title);
     }
 
+    /**
+     * Displays a placeholder message in the content area.
+     *
+     * @param text placeholder message to show
+     */
     private void setPlaceholder(String text) {
         contentArea.getChildren().clear();
         Label lbl = new Label(text);

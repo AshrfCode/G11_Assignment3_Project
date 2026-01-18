@@ -1,5 +1,3 @@
-
-
 package guestgui;
 
 import client.ClientController;
@@ -9,17 +7,50 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
+/**
+ * JavaFX controller for guest waiting list operations.
+ * <p>
+ * Supports joining and leaving the waiting list using guest contact details (phone/email).
+ * Uses {@link ClientSession#activeHandler} to handle asynchronous server responses for each request.
+ */
 public class WaitingListGuestController
 {
 
+    /**
+     * Text field for entering the number of diners to join the waiting list with.
+     */
     @FXML private TextField txtDiners;
+
+    /**
+     * Text field for entering a contact phone number (optional if email provided).
+     */
     @FXML private TextField txtPhone;
+
+    /**
+     * Text field for entering a contact email address (optional if phone provided).
+     */
     @FXML private TextField txtEmail;
+
+    /**
+     * Text field for entering the waiting list code used to leave the waiting list.
+     */
     @FXML private TextField txtCode;
+
+    /**
+     * Label used to display status messages, confirmations, and errors.
+     */
     @FXML private Label lblStatus;
 
+    /**
+     * Connected client controller used to communicate with the server.
+     */
     private ClientController client;
 
+    /**
+     * Initializes this controller with a connected client and resets UI state and active handlers.
+     *
+     * @param client the connected {@link ClientController}
+     */
     public void init(ClientController client)
     {
         this.client = client;
@@ -33,6 +64,18 @@ public class WaitingListGuestController
         ClientSession.activeHandler = null;
     }
 
+    /**
+     * Handles joining the guest waiting list.
+     * <p>
+     * Validates diners and contact information, installs an active handler for the response,
+     * and sends a join request to the server. The server may respond with:
+     * <ul>
+     *   <li>Direct table assignment (new/old formats)</li>
+     *   <li>Restaurant closed</li>
+     *   <li>Join OK with waiting code</li>
+     *   <li>Join fail with optional reason</li>
+     * </ul>
+     */
     @FXML
     private void handleJoin()
     {
@@ -141,6 +184,16 @@ public class WaitingListGuestController
         client.joinWaitingListAsGuest(diners, phone, email);
     }
 
+    /**
+     * Handles leaving the guest waiting list using the provided waiting code.
+     * <p>
+     * Validates the code input, installs an active handler for the response, and sends a leave request.
+     * The server may respond with:
+     * <ul>
+     *   <li>Leave OK</li>
+     *   <li>Leave fail with optional reason</li>
+     * </ul>
+     */
     @FXML
     private void handleLeave()
     {
@@ -193,6 +246,11 @@ public class WaitingListGuestController
         client.leaveWaitingListAsGuest(code);
     }
 
+    /**
+     * Displays an informational message in the status label.
+     *
+     * @param msg message text to display
+     */
     private void showInfo(String msg)
     {
         Platform.runLater(()-> {
@@ -201,6 +259,11 @@ public class WaitingListGuestController
         });
     }
 
+    /**
+     * Displays an error message in the status label.
+     *
+     * @param msg message text to display
+     */
     private void showError(String msg)
     {
         Platform.runLater(()-> {
@@ -209,6 +272,12 @@ public class WaitingListGuestController
         });
     }
 
+    /**
+     * Extracts the substring after the first pipe character ('|') in a server message.
+     *
+     * @param serverMsg the server message string
+     * @return the trimmed substring after the first pipe, or an empty string if not present
+     */
     private String extractAfterPipe(String serverMsg)
     {
         int idx = serverMsg.indexOf('|');
@@ -216,5 +285,3 @@ public class WaitingListGuestController
         return serverMsg.substring(idx + 1).trim();
     }
 }
-
-

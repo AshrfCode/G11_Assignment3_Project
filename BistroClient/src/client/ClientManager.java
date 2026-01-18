@@ -2,22 +2,49 @@ package client;
 
 import common.ChatIF;
 
+/**
+ * Manages a single shared {@link ClientController} instance for the client application.
+ * <p>
+ * Provides configuration of host/port and centralized lifecycle management
+ * (initialization, retrieval, and shutdown).
+ */
 public class ClientManager {
 
+    /**
+     * Singleton instance of the client controller.
+     */
     private static ClientController client;
     
+    /**
+     * Default server host used when creating the {@link ClientController}.
+     */
     private static String HOST = "localhost";
+
+    /**
+     * Default server port used when creating the {@link ClientController}.
+     */
     private static int PORT = 5555;
 
     
+    /**
+     * Configures the server host and port used when initializing the client controller.
+     *
+     * @param host the server host name or IP address
+     * @param port the server port
+     */
     public static synchronized void configure(String host, int port) {
         HOST = host;
         PORT = port;
     }
 
     /**
-     * Initialize (or reuse) the single ClientController instance.
-     * This should be called at least once with a valid UI (ChatIF).
+     * Returns the singleton {@link ClientController}, creating it if needed.
+     * <p>
+     * If the client already exists, the provided UI is set as the current message target.
+     *
+     * @param ui the UI handler that will receive display messages
+     * @return the initialized (or reused) {@link ClientController} instance
+     * @throws RuntimeException if the client cannot be initialized
      */
     public static synchronized ClientController getClient(ChatIF ui) {
         try {
@@ -33,7 +60,10 @@ public class ClientManager {
     }
 
     /**
-     * Get the already-initialized client (no UI change).
+     * Returns the already-initialized {@link ClientController} without changing the UI.
+     *
+     * @return the existing {@link ClientController} instance
+     * @throws IllegalStateException if the client has not been initialized yet
      */
     public static synchronized ClientController getClient() {
         if (client == null) {
@@ -46,7 +76,9 @@ public class ClientManager {
   
 
     /**
-     * Optional: close connection when app exits.
+     * Closes the client connection and clears the singleton instance.
+     * <p>
+     * Intended to be called when the application exits.
      */
     public static synchronized void shutdown() {
         if (client != null) {
