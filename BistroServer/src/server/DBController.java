@@ -1285,6 +1285,9 @@ public class DBController {
         return out;
     }
     
+    
+    
+    
     public String joinWaitingListAsSubscriber(int userId, int diners, String phone, String email) {
         PooledConnection pConn = null;
 
@@ -2031,6 +2034,86 @@ public class DBController {
          return ps.executeUpdate() == 1;
      }
  }
+ 
+ public Integer tryAssignWalkInToEmptyTable(int diners)
+ {
+     PooledConnection pConn = null;
+
+     String selectSql =
+         "SELECT table_number " +
+         "FROM restaurant_tables " +
+         "WHERE status='EMPTY' AND capacity >= ? " +
+         "ORDER BY capacity ASC, table_number ASC " +
+         "LIMIT 1 FOR UPDATE";
+
+     String updateSql =
+         "UPDATE restaurant_tables " +
+         "SET status='OCCUPIED' " +
+         "WHERE table_number=? AND status='EMPTY'";
+
+     try
+     {
+         pConn = pool.getConnection();
+         Connection conn = pConn.getConnection();
+
+         boolean oldAuto = conn.getAutoCommit();
+         conn.setAutoCommit(false);
+
+         try
+         {
+             Integer tableNum = null;
+
+             try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
+                 ps.setInt(1, diners);
+                 try (ResultSet rs = ps.executeQuery()) {
+                     if (rs.next())
+                     {
+                         tableNum = rs.getInt("table_number");
+                     }
+                 }
+                 }
+
+
+                 if (tableNum == null)
+                 {
+                     conn.rollback();
+                     return null; // אין שולחן פנוי מתאים
+                 }
+
+                 int rows;
+                 try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                     ps.setInt(1, tableNum);
+                     rows = ps.executeUpdate();
+                 }
+
+                 if (rows == 1)
+                 {
+                     conn.commit();
+                     return tableNum; // ✅ שולחן נתפס והפך ל-OCCUPIED
+                 }
+                 else
+                 {
+                     conn.rollback();
+                     return null; // מישהו אחר תפס אותו לפני
+                 }
+
+                 }
+                 finally
+                 {
+                     conn.setAutoCommit(oldAuto);
+                 }
+
+             } catch (Exception e)
+             {
+                 e.printStackTrace();
+                 return null;
+             }
+             finally
+             {
+                 if (pConn != null) pool.releaseConnection(pConn);
+             }
+         }
+
 
  private boolean createReservationFromWaiting(Connection conn, WaitingCandidate c, int tableNum, LocalDateTime now) throws SQLException {
      // Create reservation for NOW->NOW+2h with the waiting code (WLxxxx).

@@ -143,4 +143,73 @@ public class TableDAO {
             pool.releaseConnection(pConn);
         }
     }
+    
+    public Integer findEmptyTableForDiners(Connection conn, int diners) throws SQLException
+{
+    String sql = """
+            SELECT table_number
+            FROM restaurant_tables
+            WHERE UPPER(TRIM(status)) = 'EMPTY' AND capacity >= ?
+            ORDER BY capacity ASC, table_number ASC
+            LIMIT 1
+        """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, diners);
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt("table_number");
+            return null;
+        }
+        }
+    }
+
+    public int updateTableStatus(int tableNumber, String status) throws SQLException
+{
+    PooledConnection pConn = null;
+        try {
+        pConn = pool.getConnection();
+        Connection conn = pConn.getConnection();
+
+        System.out.println("DEBUG: updateTableStatus table=" + tableNumber + " status=" + status);
+        System.out.println("DEBUG: DB=" + conn.getMetaData().getURL());
+
+        String sql = "UPDATE restaurant_tables SET status = ? WHERE table_number = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, tableNumber);
+            int rows = ps.executeUpdate();
+            System.out.println("DEBUG: rowsUpdated=" + rows);
+
+            // בדיקת סטטוס מיד אחרי
+            try (PreparedStatement chk =
+                         conn.prepareStatement("SELECT status FROM restaurant_tables WHERE table_number=?")) {
+                chk.setInt(1, tableNumber);
+                try (ResultSet rs = chk.executeQuery()) {
+                    if (rs.next()) System.out.println("DEBUG: statusAfterUpdate=" + rs.getString(1));
+                }
+                }
+
+                return rows;
+            }
+            }
+            finally
+            {
+                pool.releaseConnection(pConn);
+            }
+        }
+
+
+    public boolean occupyTableIfEmpty(Connection conn, int tableNumber) throws SQLException
+{
+    String sql = """
+            UPDATE restaurant_tables
+            SET status = 'OCCUPIED'
+            WHERE table_number = ?
+              AND UPPER(TRIM(status)) = 'EMPTY'
+        """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, tableNumber);
+        return ps.executeUpdate() == 1;
+    }
+}
 }

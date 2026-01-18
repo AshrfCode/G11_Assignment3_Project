@@ -321,15 +321,46 @@ public class BistroServer extends AbstractServer {
                         client.sendToClient(response);
                         break;
                     }
+                    
+                    case ClientRequest.CMD_JOIN_WAITING_LIST_GUEST: {
+                        int diners = Integer.parseInt(params[0].toString());
+                        String phone = (params.length >= 2 && params[1] != null) ? params[1].toString().trim() : "";
+                        String email = (params.length >= 3 && params[2] != null) ? params[2].toString().trim() : "";
 
+                        Integer tableNow = db.tryAssignWalkInToEmptyTable(diners);
+
+                        if (tableNow != null && tableNow > 0) {
+                            client.sendToClient("WAITING_DIRECT_TABLE|Added to an empty table. No need to join the waiting list.|" + tableNow);
+                            break;
+                        }
+
+
+                        // ✅ 2) אם אין שולחן פנוי -> ממשיכים בדיוק ללוגיקה הישנה
+                        String code = db.joinWaitingListAsGuest(diners, phone, email);
+
+                        if ("CLOSED".equals(code)) client.sendToClient("WAITING_CLOSED");
+                        else if (code != null && !code.isBlank()) client.sendToClient("WAITING_GUEST_JOIN_OK|" + code);
+                        else client.sendToClient("WAITING_GUEST_JOIN_FAIL|DB error");
+
+                        break;
+                    }
                     case ClientRequest.CMD_JOIN_WAITING_LIST: {
-                        int userId = Integer.parseInt(params[0].toString());
+                        int subscriberId = Integer.parseInt(params[0].toString());
                         int diners = Integer.parseInt(params[1].toString());
-
                         String phone = (params.length >= 3 && params[2] != null) ? params[2].toString().trim() : "";
                         String email = (params.length >= 4 && params[3] != null) ? params[3].toString().trim() : "";
 
-                        String code = db.joinWaitingListAsSubscriber(userId, diners, phone, email);
+                        Integer tableNow = db.tryAssignWalkInToEmptyTable(diners);
+
+                        if (tableNow != null && tableNow > 0) {
+                            client.sendToClient("WAITING_DIRECT_TABLE|Added to an empty table. No need to join the waiting list.|" + tableNow);
+                            break;
+                        }
+
+
+
+                        // ✅ 2) אם אין שולחן פנוי -> ממשיכים בדיוק ללוגיקה הישנה
+                        String code = db.joinWaitingListAsSubscriber(subscriberId, diners, phone, email);
 
                         if ("CLOSED".equals(code)) client.sendToClient("WAITING_CLOSED");
                         else if (code != null && !code.isBlank()) client.sendToClient("WAITING_JOIN_OK|" + code);
@@ -352,21 +383,7 @@ public class BistroServer extends AbstractServer {
                         break;
                     }
 
-                    case ClientRequest.CMD_JOIN_WAITING_LIST_GUEST: {
-                        int diners = Integer.parseInt(params[0].toString());
-                        String phone = (params.length >= 2 && params[1] != null) ? params[1].toString().trim() : "";
-                        String email = (params.length >= 3 && params[2] != null) ? params[2].toString().trim() : "";
-
-                        String code = db.joinWaitingListAsGuest(diners, phone, email);
-
-                        if ("CLOSED".equals(code)) client.sendToClient("WAITING_CLOSED");
-                        else if (code != null && !code.isBlank()) client.sendToClient("WAITING_GUEST_JOIN_OK|" + code);
-                        else client.sendToClient("WAITING_GUEST_JOIN_FAIL|DB error");
-
-
-                        break;
-                    }
-
+                    
                     case ClientRequest.CMD_LEAVE_WAITING_LIST_GUEST: {
                         String code = (params[0] == null) ? "" : params[0].toString().trim();
 
