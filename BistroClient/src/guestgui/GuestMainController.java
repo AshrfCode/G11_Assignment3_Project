@@ -163,6 +163,7 @@ public class GuestMainController {
     @FXML
     private void handleBack() {
         try {
+        	ClientSession.clear();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientgui/BistroMain.fxml"));
             Parent root = loader.load();
 

@@ -1,129 +1,102 @@
-/* =========================
-   CheckInView.css
-   Same theme as ReservationView.css
-========================= */
+/* checkin.css */
 
+/* 1. Main Background */
 .root {
-    -fx-font-family: "Inter", "Segoe UI", sans-serif;
-    -fx-background-color: #FFFFFF;
+    -fx-background-color: #FFFFFF; /* White clean background */
 }
 
-/* ===== Labels ===== */
+/* 2. Headings & Text */
 .label {
-    -fx-text-fill: #2F3F3E;
-    -fx-font-size: 13px;
+    -fx-text-fill: #425B58; /* Deep Teal */
+    -fx-font-family: "Segoe UI", "Helvetica", "Arial";
 }
 
-/* Title */
-.label.title {
-    -fx-font-size: 22px;
+.header-label {
+    -fx-font-size: 28px;
     -fx-font-weight: bold;
-    -fx-padding: -6 0 0 0;
+    -fx-text-fill: #425B58;
+    -fx-effect: dropshadow(three-pass-box, rgba(66, 91, 88, 0.2), 5, 0, 0, 2);
 }
 
-/* ===== Input ===== */
+.instruction-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #7a8c8a; /* A slightly lighter version of the deep teal for subtitles */
+}
+
+/* 3. Text Fields */
 .text-field {
     -fx-background-color: #FFFFFF;
-    -fx-border-color: #B8CDC9;
-    -fx-border-width: 2;
-    -fx-border-radius: 16;
-    -fx-background-radius: 16;
-    -fx-padding: 8 12;
+    -fx-border-color: #A1C0BB; /* Soft Sage Border */
+    -fx-border-width: 2px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px;
     -fx-font-size: 14px;
+    -fx-text-fill: #425B58;
 }
 
-/* Focus – GREEN highlight */
 .text-field:focused {
-    -fx-border-color: #2F7F73;
-    -fx-effect: dropshadow(three-pass-box, rgba(47,127,115,0.45), 8, 0, 0, 2);
+    -fx-border-color: #425B58; /* Darker border on focus */
+    -fx-background-color: #F9FBFA; /* Very subtle tint on focus */
 }
 
-/* ===== Buttons ===== */
-.button {
-    -fx-background-radius: 18;
+/* 4. The Main Action Button */
+.action-button {
+    -fx-background-color: #425B58; /* Deep Teal Background */
+    -fx-text-fill: #FFC3A1;        /* Peach Text - High contrast & Modern look */
+    -fx-font-size: 16px;
     -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 25px;
     -fx-cursor: hand;
-    -fx-padding: 10 18;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 3, 0, 0, 2);
 }
 
-/* Main action – mint */
-.button.primary-btn {
-    -fx-background-color: #A9C0BC;
-    -fx-text-fill: #2F3F3E;
+.action-button:hover {
+    -fx-background-color: #354a47; /* Slightly darker on hover */
+    -fx-text-fill: #FFFFFF;        /* Text turns white on hover */
+    -fx-translate-y: -1px;         /* Subtle lift effect */
 }
 
-.button.primary-btn:hover {
-    -fx-background-color: derive(#A9C0BC, -8%);
+.action-button:pressed {
+    -fx-background-color: #2a3b39;
+    -fx-translate-y: 1px;
 }
 
-.button.primary-btn:pressed {
-    -fx-background-color: derive(#A9C0BC, -14%);
-}
-
-/* ===== Hyperlink (Forgot) – red (if you want it red) ===== */
+/* 5. Hyperlink */
 .hyperlink {
-    -fx-text-fill: #E53935;
+    -fx-text-fill: #425B58;
+    -fx-underline: false;
     -fx-font-size: 13px;
     -fx-border-color: transparent;
-    -fx-padding: 0;
 }
 
 .hyperlink:hover {
-    -fx-text-fill: derive(#E53935, -10%);
-    -fx-underline: true;
+    -fx-text-fill: #263331;
 }
 
-/* ===== Quick select box ===== */
-#quickSelectBox {
-    -fx-background-color: #FFFFFF;
-    -fx-border-color: #D7E4E1;
-    -fx-border-width: 2;
-    -fx-border-radius: 16;
-    -fx-background-radius: 16;
-    -fx-padding: 10;
-}
-
-/* The "Tap a code..." label inside quick select */
-#quickSelectBox .label {
-    -fx-text-fill: #2F7F73;
-    -fx-font-weight: bold;
-}
-
-/* ===== ListView (codes) ===== */
+/* 6. ListView (The "Perk" List) */
 .list-view {
-    -fx-background-color: #FFFFFF;
-    -fx-border-color: #B8CDC9;
-    -fx-border-width: 2;
-    -fx-border-radius: 16;
-    -fx-background-radius: 16;
-    -fx-padding: 6;
-}
-
-/* remove inner harsh border */
-.list-view .virtual-flow {
     -fx-background-color: transparent;
+    -fx-border-color: #A1C0BB;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
 }
 
-/* List cells */
 .list-cell {
-    -fx-background-color: transparent;
-    -fx-text-fill: #2F3F3E;
-    -fx-padding: 8 10;
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #425B58;
+    -fx-padding: 8px;
 }
 
-/* hover on a row */
-.list-cell:hover {
-    -fx-background-color: rgba(169,192,188,0.25); /* mint tint */
+.list-cell:filled:selected, .list-cell:filled:hover {
+    -fx-background-color: #FFC3A1; /* Peach highlight */
+    -fx-text-fill: #425B58;
 }
 
-/* selected row */
-.list-cell:selected {
-    -fx-background-color: rgba(247,189,154,0.55); /* peach tint */
-    -fx-text-fill: #4A2E1F;
-}
-
-/* ===== Status label ===== */
-#statusLabel {
-    -fx-text-fill: #3F5654;
+/* 7. Error/Status Label */
+.status-label {
+    -fx-font-size: 14px;
     -fx-font-weight: bold;
 }
+/* You can set text fill dynamically in Java, or default here */

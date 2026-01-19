@@ -59,6 +59,9 @@ public class BistroServer extends AbstractServer {
 
                 int n = db.cancelNoShowReservations(notifier);
                 if (n > 0) System.out.println("⏰ Auto-canceled no-show reservations: " + n);
+                
+                int autoFinished = db.autoCompleteFinishedReservations(notifier);
+                if (autoFinished > 0) System.out.println("💰 Auto-completed & billed reservations: " + autoFinished);
 
             } catch (Exception e) {
                 e.printStackTrace();

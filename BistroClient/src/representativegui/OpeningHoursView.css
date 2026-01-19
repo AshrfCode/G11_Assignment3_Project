@@ -1,88 +1,95 @@
 /* =========================
    OpeningHoursView.css
-   Unified restaurant theme
-   Mint + Peach + Green focus
+   Theme: Modern Mint + Peach
+   Style: Compact, Clean, Professional
 ========================= */
 
 .root {
     -fx-font-family: "Inter", "Segoe UI", sans-serif;
     -fx-background-color: #FFFFFF;
+    -fx-font-size: 13px; /* Slightly smaller base font for compactness */
 }
 
-/* page container */
+/* Page container */
 .opening-root {
     -fx-background-color: #FFFFFF;
 }
 
-/* cards (special + weekly) */
+/* Cards (Special + Weekly Sections)
+   Removed bulky borders, added subtle shadow for depth */
 .section-card {
     -fx-background-color: #FFFFFF;
-    -fx-border-color: #B8CDC9;
-    -fx-border-width: 2;
-    -fx-border-radius: 16;
-    -fx-background-radius: 16;
-    -fx-padding: 14;
+    -fx-border-color: #D6E2DF; /* Lighter, subtler border */
+    -fx-border-width: 1;       /* Thinner border */
+    -fx-border-radius: 8;      /* Tighter corners */
+    -fx-background-radius: 8;
+    -fx-padding: 12;           /* Less internal spacing */
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.03), 5, 0, 0, 2);
 }
 
-/* titles */
+/* Titles */
 .label {
     -fx-text-fill: #2F3F3E;
-    -fx-font-size: 13px;
 }
 
 .label.section-title {
-    -fx-font-size: 16px;
+    -fx-font-size: 15px;
     -fx-font-weight: bold;
+    -fx-padding: 0 0 5 0; /* Add slight spacing below title */
 }
 
-/* inputs */
+/* Inputs (TextField, ComboBox, DatePicker)
+   Made compact and uniform */
 .text-field,
 .combo-box,
 .date-picker {
     -fx-background-color: #FFFFFF;
     -fx-border-color: #B8CDC9;
-    -fx-border-width: 2;
-    -fx-border-radius: 16;
-    -fx-background-radius: 16;
-    -fx-padding: 8 12;
-    -fx-font-size: 14px;
+    -fx-border-width: 1;       /* Thinner border */
+    -fx-border-radius: 6;      /* Modern rounded corners */
+    -fx-background-radius: 6;
+    -fx-padding: 5 8;          /* COMPACT PADDING */
+    -fx-font-size: 13px;
 }
 
-/* remove inner borders */
+/* Remove inner borders for complex inputs */
 .combo-box .text-field,
 .date-picker .text-field {
     -fx-background-color: transparent;
     -fx-border-width: 0;
-    -fx-padding: 0 8;
+    -fx-padding: 0 5;
 }
 
-/* arrow/calendar clean */
+/* Clean arrow button */
 .combo-box-base .arrow-button,
 .date-picker .arrow-button {
     -fx-background-color: transparent;
     -fx-border-width: 0;
+    -fx-padding: 0 8; /* Spacing for the arrow */
 }
 
-/* focus glow */
+/* Focus State - Glow */
 .text-field:focused,
 .combo-box:focused,
 .date-picker:focused {
     -fx-border-color: #2F7F73;
-    -fx-effect: dropshadow(three-pass-box, rgba(47,127,115,0.45), 8, 0, 0, 2);
+    -fx-background-color: #FAFCFB; /* Very subtle mint tint when typing */
+    -fx-effect: dropshadow(three-pass-box, rgba(47,127,115,0.2), 5, 0, 0, 1); /* Softer shadow */
 }
 
-/* list styling */
+/* List Styling */
 .list-view {
     -fx-background-color: #FFFFFF;
-    -fx-border-color: #B8CDC9;
-    -fx-border-width: 2;
-    -fx-border-radius: 16;
-    -fx-background-radius: 16;
+    -fx-border-color: #D6E2DF;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
 }
 
 .list-cell {
     -fx-text-fill: #2F3F3E;
-    -fx-padding: 10 12;
+    -fx-padding: 6 10; /* Reduced padding for compact list */
+    -fx-font-size: 13px;
 }
 
 .list-cell:odd {
@@ -90,79 +97,88 @@
 }
 
 .list-cell:hover {
-    -fx-background-color: #F1F7F6;
+    -fx-background-color: #F0F5F4;
+    -fx-cursor: hand;
 }
 
-/* selection = light peach, text stays dark */
+/* Selected Item */
 .list-cell:selected {
-    -fx-background-color: rgba(247,189,154,0.35);
+    -fx-background-color: rgba(247,189,154,0.25); /* Subtle peach selection */
+    -fx-border-color: transparent transparent transparent #F7BD9A; /* Left accent bar */
+    -fx-border-width: 0 0 0 3;
 }
 .list-cell:selected .text {
     -fx-fill: #2F3F3E;
 }
 
-/* buttons base */
+/* Buttons Base - Much more compact */
 .button {
-    -fx-background-radius: 18;
+    -fx-background-radius: 6; /* Matches inputs */
     -fx-font-weight: bold;
+    -fx-font-size: 12px;      /* Smaller font */
     -fx-cursor: hand;
-    -fx-padding: 10 18;
+    -fx-padding: 6 14;        /* Slimmer padding */
+    -fx-effect: null;         /* Remove default heavy shadows */
 }
 
-/* mint buttons */
+/* Mint Action Buttons (Secondary/Normal) */
 .button.mint-btn {
-    -fx-background-color: #A9C0BC;
-    -fx-text-fill: #2F3F3E;
+    -fx-background-color: #EBF2F0; /* Lighter background */
+    -fx-text-fill: #2F5F55;
+    -fx-border-color: #B8CDC9;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
 }
-.button.mint-btn:hover { -fx-background-color: derive(#A9C0BC, -8%); }
-.button.mint-btn:pressed { -fx-background-color: derive(#A9C0BC, -14%); }
+.button.mint-btn:hover {
+    -fx-background-color: #DCEBE8;
+    -fx-border-color: #2F7F73;
+}
+.button.mint-btn:pressed {
+    -fx-background-color: #CDE0DD;
+}
 
-/* peach buttons */
+/* Peach Buttons (Primary/Save) */
 .button.peach-btn {
     -fx-background-color: #F7BD9A;
     -fx-text-fill: #4A2E1F;
+    -fx-border-color: transparent; /* No border for primary */
 }
-.button.peach-btn:hover { -fx-background-color: derive(#F7BD9A, -8%); }
-.button.peach-btn:pressed { -fx-background-color: derive(#F7BD9A, -14%); }
+.button.peach-btn:hover {
+    -fx-background-color: #F4AE86;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 3, 0, 0, 1);
+}
+.button.peach-btn:pressed {
+    -fx-background-color: #EAA075;
+    -fx-translate-y: 1;
+}
 
-/* status label */
+/* Status Label */
 .opening-status {
     -fx-text-fill: #3F5654;
     -fx-font-weight: bold;
+    -fx-padding: 5;
 }
+
 /* =========================
-   ComboBox – keep selected item WHITE
+   ComboBox Fixes
 ========================= */
 
-/* selected value shown in the closed ComboBox */
-.combo-box-base {
+.combo-box-popup .list-view {
     -fx-background-color: #FFFFFF;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 8, 0, 0, 2);
 }
 
-/* text inside selected ComboBox */
-.combo-box-base .list-cell {
-    -fx-background-color: #FFFFFF;
-    -fx-text-fill: #2F3F3E;
-}
-
-/* dropdown list items */
 .combo-box-popup .list-cell {
     -fx-background-color: #FFFFFF;
     -fx-text-fill: #2F3F3E;
+    -fx-padding: 6 10;
 }
 
-/* hover on dropdown items (very subtle mint, optional) */
 .combo-box-popup .list-cell:hover {
     -fx-background-color: #F1F7F6;
 }
 
-/* selected item in dropdown – ALSO white */
 .combo-box-popup .list-cell:selected {
-    -fx-background-color: #FFFFFF;
-    -fx-text-fill: #2F3F3E;
-}
-
-/* focused ComboBox – keep border mint, not background */
-.combo-box:focused {
-    -fx-background-color: #FFFFFF;
+    -fx-background-color: #F7BD9A;
+    -fx-text-fill: #4A2E1F;
 }

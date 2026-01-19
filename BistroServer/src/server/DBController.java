@@ -2458,7 +2458,125 @@ public class DBController {
 }
 
 
- 	
+	//Add to your BistroDBController (or equivalent class)
+		public int autoCompleteFinishedReservations(NotificationService notifier) {
+		  PooledConnection pConn = null;
+		  int processedCount = 0;
+		
+		  // 1. Find reservations checked in > 2 hours ago that represent "active" dining
+		  String selectCandidates = 
+		      "SELECT reservation_id, confirmation_code, email, subscriber_number, dinners_number, check_in_time " +
+		      "FROM reservations " +
+		      "WHERE status = 'CHECKED_IN' " +
+		      "  AND check_in_time <= (NOW() - INTERVAL 2 HOUR)";
+		
+		  // 2. Logic to insert the bill
+		  String insertBillSql = 
+		      "INSERT INTO bills (total_amount, discount_amount, bill_date, reservation_id) " +
+		      "VALUES (?, ?, NOW(), ?)";
+		
+		  // 3. Logic to close the reservation
+		  String closeReservationSql = 
+		      "UPDATE reservations SET status = 'COMPLETED' " +
+		      "WHERE reservation_id = ? AND status = 'CHECKED_IN'";
+		
+		  try {
+		      pConn = pool.getConnection();
+		      Connection conn = pConn.getConnection();
+		      boolean oldAuto = conn.getAutoCommit();
+		      conn.setAutoCommit(false); // Transaction start
+		
+		      try (PreparedStatement psSel = conn.prepareStatement(selectCandidates);
+		           ResultSet rs = psSel.executeQuery()) {
+		
+		          while (rs.next()) {
+		              int id = rs.getInt("reservation_id");
+		              String email = rs.getString("email");
+		              String subNum = rs.getString("subscriber_number");
+		              int diners = rs.getInt("dinners_number");
+		              String code = rs.getString("confirmation_code");
+		
+		              // --- A. Replicate Billing Logic ---
+		              double total = diners * 100.0;
+		              boolean isSubscriber = (subNum != null && !subNum.isBlank());
+		              double discount = isSubscriber ? total * 0.10 : 0.0;
+		              double finalTotal = total - discount;
+		
+		              try {
+		                  // --- B. Insert Bill ---
+		                  // We do this INSIDE the loop for each person
+		                  try (PreparedStatement psBill = conn.prepareStatement(insertBillSql)) {
+		                      psBill.setDouble(1, total);
+		                      psBill.setDouble(2, discount);
+		                      psBill.setInt(3, id);
+		                      int billRows = psBill.executeUpdate();
+		                      if (billRows <= 0) continue; // Skip if insert failed
+		                  }
+		
+		                  // --- C. Update Status ---
+		                  try (PreparedStatement psUpdate = conn.prepareStatement(closeReservationSql)) {
+		                      psUpdate.setInt(1, id);
+		                      int updateRows = psUpdate.executeUpdate();
+		                      
+		                      // If updateRows is 0, it means the user might have paid manually 
+		                      // just a millisecond ago. We rollback this specific iteration.
+		                      if (updateRows <= 0) {
+		                          conn.rollback();
+		                          continue; 
+		                      }
+		                  }
+		
+		                  conn.commit(); // Finalize this specific reservation
+		
+		                  // --- D. Send Email ---
+		                  if (email != null && !email.isBlank()) {
+		                      String msg = String.format(
+		                          "Hello,\n\n" +
+		                          "Your 2-hour dining window at Bistro has ended.\n" +
+		                          "We have automatically checked you out.\n\n" +
+		                          "--- Receipt ---\n" +
+		                          "Reservation Code: %s\n" +
+		                          "Diners: %d\n" +
+		                          "Subtotal: %.2f₪\n" +
+		                          "Discount: %.2f₪\n" +
+		                          "TOTAL CHARGED: %.2f₪\n\n" +
+		                          "Thank you for dining with us!",
+		                          code, diners, total, discount, finalTotal
+		                      );
+		                      notifier.sendEmail(email, "Bistro - Automatic Checkout Receipt", msg);
+		                  }
+		                  
+		                  processedCount++;
+		
+		                  // Reset auto-commit state for the next iteration safety
+		                  conn.setAutoCommit(false);
+		
+		              } catch (Exception innerEx) {
+		                  innerEx.printStackTrace();
+		                  try { conn.rollback(); } catch (Exception ignored) {}
+		                  // Continue to next reservation even if one fails
+		              }
+		          }
+		          
+		          conn.setAutoCommit(oldAuto);
+		          return processedCount;
+		
+		      } catch (Exception e) {
+		          e.printStackTrace();
+		          try { conn.rollback(); } catch (Exception ignored) {}
+		          try { conn.setAutoCommit(oldAuto); } catch (Exception ignored) {}
+		          return processedCount;
+		      }
+		
+		  } catch (Exception e) {
+		      e.printStackTrace();
+		      return processedCount;
+		  } finally {
+		      if (pConn != null) pool.releaseConnection(pConn);
+		  }
+		}
+
+	    
 
 
 }
