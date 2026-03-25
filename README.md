@@ -57,6 +57,23 @@ Before you begin, ensure you have met the following requirements:
 
 ### Installation & Setup
 
+
 **1. Database Setup:** Execute the SQL script in your database environment to create the necessary tables and populate the initial data:
 ```sql
 SOURCE path/to/11_Assignment3_DB.sql;
+
+```
+2. Server Initialization:
+Run the server application using your IDE (pointing to the main method in BistroServer) or by executing the server JAR from your terminal:
+
+```Bash
+java -jar G11_server.jar
+```
+
+3. Client Initialization:
+Once the server is up and listening for connections, launch the client application:
+
+```Bash
+java -jar G11_client.jar
+```
+
